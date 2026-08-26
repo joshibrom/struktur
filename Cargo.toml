@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/struktur-core"]
+members = ["crates/struktur-cli","crates/struktur-core"]
 resolver = "2"
 
 [workspace.dependencies]
