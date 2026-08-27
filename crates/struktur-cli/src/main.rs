@@ -1,4 +1,6 @@
 fn main() {
-    dbg!(struktur_core::add(43, 24));
+    // TODO: Handle error better
+    struktur_core::ensure_project_files().expect("project files should be creatable");
+
     println!("Hello, world!");
 }
