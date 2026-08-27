@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    io::{BufWriter, Write},
+    path::{Path, PathBuf},
+};
 
 use directories::ProjectDirs;
 
@@ -10,6 +13,7 @@ pub enum XDGError {
     ConfigPathNotFound,
     DataPathNotFound,
     GeneralIOError(std::io::Error),
+    FormatError(toml::ser::Error),
 }
 
 pub fn get_config_path() -> Result<PathBuf, XDGError> {
@@ -29,19 +33,37 @@ pub fn get_user_data_path() -> Result<PathBuf, XDGError> {
 }
 
 pub fn ensure_project_files() -> Result<(), XDGError> {
-    let paths_to_create = [get_config_path()?, get_user_data_path()?]
-        .into_iter()
-        .map(|p| p.try_exists().map(|exists| (p, exists)))
-        .filter_map(Result::ok)
-        .filter_map(|(p, exists)| if exists { None } else { Some(p) })
-        .collect::<Vec<_>>();
+    enum FileType {
+        Config,
+        UserData,
+    }
 
-    for p in paths_to_create {
+    let paths_to_create = [
+        (get_config_path()?, FileType::Config),
+        (get_user_data_path()?, FileType::UserData),
+    ]
+    .into_iter()
+    .map(|p| p.0.try_exists().map(|exists| (p, exists)))
+    .filter_map(Result::ok)
+    .filter_map(|(p, exists)| if exists { None } else { Some(p) })
+    .collect::<Vec<_>>();
+
+    for (p, ft) in paths_to_create {
         std::fs::create_dir_all(&p.parent().unwrap_or(Path::new("")))
             .map_err(|err| XDGError::GeneralIOError(err))?;
 
-        // TODO: Append default content to file
-        std::fs::File::create_new(&p).map_err(|err| XDGError::GeneralIOError(err))?;
+        let file = std::fs::File::create_new(&p).map_err(|err| XDGError::GeneralIOError(err))?;
+        match ft {
+            FileType::Config => {
+                let mut writer = BufWriter::new(file);
+                let content = toml::to_string_pretty(&config::RawUserConfig::default())
+                    .map_err(|err| XDGError::FormatError(err))?;
+                writer
+                    .write_all(content.as_bytes())
+                    .map_err(|err| XDGError::GeneralIOError(err))?;
+            }
+            FileType::UserData => {}
+        };
     }
 
     Ok(())

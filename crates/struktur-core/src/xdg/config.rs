@@ -53,9 +53,33 @@ pub struct Bullet {
 }
 
 #[derive(Serialize, Deserialize)]
-struct RawUserConfig {
+pub struct RawUserConfig {
     pub presets: Vec<Preset>,
     pub bullets: Vec<Bullet>,
+}
+
+impl std::default::Default for RawUserConfig {
+    fn default() -> Self {
+        let presets = vec![Preset {
+            id: "backend".into(),
+            title: "Backend Engineer".into(),
+            description: "Focus on API design, high throughput, and database optimization.".into(),
+            default_tone: "Direct, technical, emphasizing concurrency, latency reduction, and data integrity.".into(),
+            opening_hook: "I am interested in the {{.Role}} position at {{.Company}}. With a strong background building high-throughput backend services and concurrent data processing pipelines, I focus on delivering scalable, reliable systems.".into(),
+            closing_hook: "I look forward to discussing how my experience in backend architecture and pipeline optimization can support engineering initiatives at {{.Company}}.".into(),
+            default_bullets: Vec::new().into(),
+            additional_archetypes: vec![Archetype {
+                id: "startup_generalist".into(),
+                title: "Startup Generalist".into(),
+                prompt: "Emphasize 0-to-1 velocity, building pragmatic solutions across multiple stacks, proactive problem solving, and ownership.".into(),
+            }],
+        }];
+
+        Self {
+            presets,
+            bullets: Vec::new(),
+        }
+    }
 }
 
 pub enum UserConfigError {
