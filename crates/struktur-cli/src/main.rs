@@ -1,6 +1,20 @@
-fn main() {
-    // TODO: Handle error better
-    struktur_core::ensure_project_files().expect("project files should be creatable");
+use clap::Parser;
 
-    println!("Hello, world!");
+use crate::cmd::{Cli, Commands};
+
+mod cmd;
+
+pub fn run(cli: Cli) {
+    match &cli.command {
+        Commands::Init => {
+            // TODO: Handle error better
+            struktur_core::ensure_project_files().expect("project files should be creatable");
+            println!("Created project files."); // TODO: Better logging
+        }
+    }
+}
+
+fn main() {
+    let cli = Cli::parse();
+    run(cli);
 }
