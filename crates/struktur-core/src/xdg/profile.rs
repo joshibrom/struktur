@@ -1,20 +1,9 @@
-use std::{
-    io::{BufReader, Read},
-    path::Path,
-};
-
 use serde::{Deserialize, Serialize};
 
-pub fn load(file_path: &Path) -> Result<Profile, ProfileError> {
-    let file = std::fs::File::open(file_path)?;
-    let mut reader = BufReader::new(file);
-
-    let mut raw_content = String::new();
-    reader.read_to_string(&mut raw_content)?;
-
-    let profile = toml::from_str(&raw_content)?;
-    Ok(profile)
-}
+use super::{
+    document::{XDGDocument, XDGError},
+    get_project_dirs,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Profile {
@@ -164,21 +153,17 @@ impl std::default::Default for Profile {
     }
 }
 
-#[derive(Debug)]
-pub enum ProfileError {
-    OtherDeserializationError(toml::de::Error),
-    IOError(std::io::Error),
-}
-
-impl From<toml::de::Error> for ProfileError {
-    fn from(value: toml::de::Error) -> Self {
-        Self::OtherDeserializationError(value)
+impl XDGDocument for Profile {
+    fn file_name() -> &'static str {
+        "profile.toml"
     }
-}
 
-impl From<std::io::Error> for ProfileError {
-    fn from(value: std::io::Error) -> Self {
-        Self::IOError(value)
+    fn get_path() -> Result<std::path::PathBuf, super::document::XDGError> {
+        let path = get_project_dirs()
+            .ok_or(XDGError::DataPathNotFound)?
+            .data_dir()
+            .to_owned();
+        Ok(path.join(Self::file_name()))
     }
 }
 

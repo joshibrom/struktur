@@ -1,30 +1,22 @@
-use std::{
-    collections::HashMap,
-    io::{BufReader, Read},
-    path::Path,
-};
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-pub fn load(file_path: &Path) -> Result<UserConfig, UserConfigError> {
-    let file = std::fs::File::open(file_path)?;
-    let mut reader = BufReader::new(file);
-
-    let mut raw_content = String::new();
-    reader.read_to_string(&mut raw_content)?;
-
-    let config = toml::from_str::<RawUserConfig>(&raw_content)?;
-    Ok(config.try_into()?)
-}
+use super::{
+    document::{XDGDocument, XDGError},
+    get_project_dirs,
+};
 
 pub type ConfigIdT = String;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(try_from = "RawUserConfig", into = "RawUserConfig")]
 pub struct UserConfig {
     pub presets: HashMap<ConfigIdT, Preset>,
     pub bullets: HashMap<ConfigIdT, Bullet>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Preset {
     pub id: ConfigIdT,
     pub title: String,
@@ -37,14 +29,14 @@ pub struct Preset {
     pub additional_archetypes: Vec<Archetype>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Archetype {
     pub id: ConfigIdT,
     pub title: String,
     pub prompt: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Bullet {
     pub id: ConfigIdT,
     pub title: String,
@@ -52,13 +44,7 @@ pub struct Bullet {
     pub text: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct RawUserConfig {
-    pub presets: Vec<Preset>,
-    pub bullets: Vec<Bullet>,
-}
-
-impl std::default::Default for RawUserConfig {
+impl std::default::Default for UserConfig {
     fn default() -> Self {
         let bullets = vec![
             Bullet {
@@ -93,29 +79,36 @@ impl std::default::Default for RawUserConfig {
             }],
         }];
 
-        Self { presets, bullets }
+        Self {
+            bullets: bullets.into_iter().map(|b| (b.id.clone(), b)).collect(),
+            presets: presets.into_iter().map(|p| (p.id.clone(), p)).collect(),
+        }
     }
 }
 
-#[derive(Debug)]
-pub enum UserConfigError {
-    MissingReferencedBullet {
-        preset_id: ConfigIdT,
-        bullet_id: ConfigIdT,
-    },
-    OtherDeserializationError(toml::de::Error),
-    IOError(std::io::Error),
+#[derive(Serialize, Deserialize)]
+struct RawUserConfig {
+    pub presets: Vec<Preset>,
+    pub bullets: Vec<Bullet>,
 }
 
-impl From<toml::de::Error> for UserConfigError {
-    fn from(value: toml::de::Error) -> Self {
-        Self::OtherDeserializationError(value)
+impl std::default::Default for RawUserConfig {
+    fn default() -> Self {
+        UserConfig::default().into()
     }
 }
 
-impl From<std::io::Error> for UserConfigError {
-    fn from(value: std::io::Error) -> Self {
-        Self::IOError(value)
+impl XDGDocument for UserConfig {
+    fn file_name() -> &'static str {
+        "config.toml"
+    }
+
+    fn get_path() -> Result<std::path::PathBuf, XDGError> {
+        let path = get_project_dirs()
+            .ok_or(XDGError::ConfigPathNotFound)?
+            .config_dir()
+            .to_owned();
+        Ok(path.join(Self::file_name()))
     }
 }
 
@@ -137,7 +130,7 @@ impl TryFrom<RawUserConfig> for UserConfig {
         // Ensure that all referenced bullets exist
         for (preset_id, preset) in presets.iter() {
             for bullet_id in &preset.default_bullets {
-                if let None = bullets.get(bullet_id) {
+                if !bullets.contains_key(bullet_id) {
                     return Err(UserConfigError::MissingReferencedBullet {
                         preset_id: preset_id.clone(),
                         bullet_id: bullet_id.clone(),
@@ -150,11 +143,36 @@ impl TryFrom<RawUserConfig> for UserConfig {
     }
 }
 
-impl Into<RawUserConfig> for UserConfig {
-    fn into(self) -> RawUserConfig {
+impl From<UserConfig> for RawUserConfig {
+    fn from(value: UserConfig) -> Self {
         RawUserConfig {
-            presets: self.presets.clone().into_values().collect(),
-            bullets: self.bullets.into_values().collect(),
+            presets: value.presets.into_values().collect(),
+            bullets: value.bullets.into_values().collect(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum UserConfigError {
+    MissingReferencedBullet {
+        preset_id: ConfigIdT,
+        bullet_id: ConfigIdT,
+    },
+}
+
+impl std::error::Error for UserConfigError {}
+
+impl std::fmt::Display for UserConfigError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MissingReferencedBullet {
+                preset_id,
+                bullet_id,
+            } => write!(
+                f,
+                "MissingReferencedBullet: Preset '{}' references Bullet with ID '{}' but it is not defined.",
+                preset_id, bullet_id
+            ),
         }
     }
 }
