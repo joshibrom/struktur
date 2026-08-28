@@ -106,6 +106,17 @@ pub struct ProfileLink {
     pub href: String,
 }
 
+impl ProfileLink {
+    /// Creates a new instance of a `ProfileLink` by casting the input types
+    /// into `String`s.
+    pub fn new(title: impl Into<String>, href: impl Into<String>) -> Self {
+        Self {
+            title: title.into(),
+            href: href.into(),
+        }
+    }
+}
+
 impl std::default::Default for Profile {
     fn default() -> Self {
         let education = vec![Education {
@@ -178,14 +189,8 @@ impl std::default::Default for Profile {
             email: "jane.doe@example.com".into(),
             phone: "+1 (555) 019-2834".into(),
             location: "San Francisco, CA".into(),
-            website: Some(ProfileLink {
-                title: "janedoe.dev".into(),
-                href: "https://janedoe.dev".into(),
-            }),
-            github: Some(ProfileLink {
-                title: "janedoe".into(),
-                href: "https://github.com/janedoe".into(),
-            }),
+            website: Some(ProfileLink::new("janedoe.dev", "https://janedoe.dev")),
+            github: Some(ProfileLink::new("janedoe", "https://github.com/janedoe")),
 
             education,
             employment,

@@ -106,10 +106,9 @@ impl std::default::Default for UserConfig {
             }],
         }];
 
-        Self {
-            bullets: bullets.into_iter().map(|b| (b.id.clone(), b)).collect(),
-            presets: presets.into_iter().map(|p| (p.id.clone(), p)).collect(),
-        }
+        RawUserConfig { bullets, presets }
+            .try_into()
+            .expect("defuault user config must be valid")
     }
 }
 
