@@ -60,6 +60,21 @@ pub struct RawUserConfig {
 
 impl std::default::Default for RawUserConfig {
     fn default() -> Self {
+        let bullets = vec![
+            Bullet {
+                id: "high_throughput_apis".into(),
+                title: "High Throughput API Design".into(),
+                tags: vec!["backend".into(), "api".into(), "performance".into()],
+                text: "Designed and implemented high-throughput REST and gRPC services capable of handling millions of daily requests with low latency.".into(),
+            },
+            Bullet {
+                id: "database_optimization".into(),
+                title: "Database Optimization & Schema Design".into(),
+                tags: vec!["backend".into(), "database".into(), "sql".into()],
+                text: "Optimized relational database schemas, indexes, and queries to reduce latency and ensure ACID compliance at scale.".into(),
+            },
+        ];
+
         let presets = vec![Preset {
             id: "backend".into(),
             title: "Backend Engineer".into(),
@@ -67,7 +82,10 @@ impl std::default::Default for RawUserConfig {
             default_tone: "Direct, technical, emphasizing concurrency, latency reduction, and data integrity.".into(),
             opening_hook: "I am interested in the {{.Role}} position at {{.Company}}. With a strong background building high-throughput backend services and concurrent data processing pipelines, I focus on delivering scalable, reliable systems.".into(),
             closing_hook: "I look forward to discussing how my experience in backend architecture and pipeline optimization can support engineering initiatives at {{.Company}}.".into(),
-            default_bullets: Vec::new().into(),
+            default_bullets: vec![
+                "high_throughput_apis".into(),
+                "database_optimization".into(),
+            ],
             additional_archetypes: vec![Archetype {
                 id: "startup_generalist".into(),
                 title: "Startup Generalist".into(),
@@ -75,13 +93,11 @@ impl std::default::Default for RawUserConfig {
             }],
         }];
 
-        Self {
-            presets,
-            bullets: Vec::new(),
-        }
+        Self { presets, bullets }
     }
 }
 
+#[derive(Debug)]
 pub enum UserConfigError {
     MissingReferencedBullet {
         preset_id: ConfigIdT,
