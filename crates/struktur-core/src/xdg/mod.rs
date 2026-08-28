@@ -62,7 +62,14 @@ pub fn ensure_project_files() -> Result<(), XDGError> {
                     .write_all(content.as_bytes())
                     .map_err(|err| XDGError::GeneralIOError(err))?;
             }
-            FileType::UserData => {}
+            FileType::UserData => {
+                let mut writer = BufWriter::new(file);
+                let content = toml::to_string_pretty(&profile::Profile::default())
+                    .map_err(|err| XDGError::FormatError(err))?;
+                writer
+                    .write_all(content.as_bytes())
+                    .map_err(|err| XDGError::GeneralIOError(err))?;
+            }
         };
     }
 
