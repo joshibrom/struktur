@@ -16,7 +16,7 @@ pub fn load(file_path: &Path) -> Result<Profile, ProfileError> {
     Ok(profile)
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Profile {
     pub name: String,
     pub email: String,
@@ -31,7 +31,7 @@ pub struct Profile {
     pub projects: Vec<Project>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Education {
     pub degree: String,
     pub school: String,
@@ -41,7 +41,7 @@ pub struct Education {
     pub coursework: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Employment {
     pub title: String,
     pub employer: String,
@@ -51,7 +51,7 @@ pub struct Employment {
     pub bullets: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct ProfessionalService {
     pub title: String,
     pub organization: String,
@@ -60,7 +60,7 @@ pub struct ProfessionalService {
     pub bullets: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Project {
     pub title: String,
     pub category: String,
@@ -179,5 +179,51 @@ impl From<toml::de::Error> for ProfileError {
 impl From<std::io::Error> for ProfileError {
     fn from(value: std::io::Error) -> Self {
         Self::IOError(value)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_profile_validity() {
+        let profile = Profile::default();
+        assert_eq!(profile.name, "Jane Doe");
+        assert!(profile.website.is_some());
+        assert!(profile.github.is_some());
+        assert_eq!(profile.education.len(), 1);
+        assert_eq!(profile.employment.len(), 2);
+        assert_eq!(profile.professional_service.len(), 1);
+        assert_eq!(profile.projects.len(), 1);
+    }
+
+    #[test]
+    fn test_default_profile_toml_roundtrip() {
+        let default_profile = Profile::default();
+        let serialized =
+            toml::to_string_pretty(&default_profile).expect("serialization should succeed");
+        let deserialized: Profile =
+            toml::from_str(&serialized).expect("deserialization should succeed");
+        assert_eq!(deserialized, default_profile);
+    }
+
+    #[test]
+    fn test_minimal_profile_deserialization() {
+        let raw = r#"
+            name = "Minimal User"
+            email = "min@example.com"
+            phone = "123-456-7890"
+            location = "Anytown, USA"
+            education = []
+            employment = []
+            professional_service = []
+            projects = []
+        "#;
+
+        let profile: Profile = toml::from_str(raw).expect("should deserialize minimal profile");
+        assert_eq!(profile.name, "Minimal User");
+        assert!(profile.website.is_none());
+        assert!(profile.github.is_none());
     }
 }
