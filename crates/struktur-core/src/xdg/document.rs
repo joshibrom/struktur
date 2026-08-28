@@ -1,16 +1,40 @@
+//! Document persistence trait and error types for XDG-managed files.
+
 use std::path::PathBuf;
 
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
+/// A document that can be persisted to and loaded from a standard XDG path.
+///
+/// Types implementing `XDGDocument` must be serializable and deserializable via Serde,
+/// and provide a default fallback representation.
 pub trait XDGDocument: Serialize + DeserializeOwned + Default {
+    /// Returns the standard filename for this document (e.g., `"config.toml"` or `"profile.toml"`).
     fn file_name() -> &'static str;
+
+    /// Resolves the absolute filesystem path where this document should be stored.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`XDGError`] if the appropriate system directory cannot be located.
     fn get_path() -> Result<PathBuf, XDGError>;
 
+    /// Checks whether the document file currently exists on the filesystem.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`XDGError`] if path resolution fails or if an I/O error occurs while checking existence.
     fn exists() -> Result<bool, XDGError> {
         let path = Self::get_path()?;
         Ok(path.try_exists()?)
     }
 
+    /// Loads and deserializes the document from its standard path on disk.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`XDGError::IOError`] if the file cannot be read, or an [`XDGError::DeserializationError`]
+    /// if the file content cannot be parsed into `Self`.
     fn load() -> Result<Self, XDGError> {
         let path = Self::get_path()?;
         let content = std::fs::read_to_string(path)?;
@@ -19,6 +43,14 @@ pub trait XDGDocument: Serialize + DeserializeOwned + Default {
         Ok(doc)
     }
 
+    /// Serializes and writes the document to its standard path on disk.
+    ///
+    /// Parent directories are automatically created if they do not already exist.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`XDGError::SerializationError`] if serialization fails, or an [`XDGError::IOError`]
+    /// if directory creation or file writing fails.
     fn save(&self) -> Result<(), XDGError> {
         let path = Self::get_path()?;
         if let Some(parent) = path.parent() {
@@ -31,12 +63,18 @@ pub trait XDGDocument: Serialize + DeserializeOwned + Default {
     }
 }
 
+/// Errors that can occur during XDG path resolution, serialization, deserialization, or file I/O.
 #[derive(Debug)]
 pub enum XDGError {
+    /// The user configuration directory could not be determined on the current system.
     ConfigPathNotFound,
+    /// The user data directory could not be determined on the current system.
     DataPathNotFound,
+    /// An underlying filesystem I/O error occurred.
     IOError(std::io::Error),
+    /// TOML serialization failed.
     SerializationError(toml::ser::Error),
+    /// TOML deserialization or schema validation failed.
     DeserializationError(toml::de::Error),
 }
 

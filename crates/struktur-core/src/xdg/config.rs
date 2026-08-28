@@ -1,3 +1,5 @@
+//! User configuration models, presets, archetypes, bullet points, and referential validation.
+
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
@@ -7,40 +9,65 @@ use super::{
     get_project_dirs,
 };
 
+/// Unique identifier for presets, archetypes, and bullet points.
 pub type ConfigIdT = String;
 
+/// The root user configuration containing role presets and reusable bullet points.
+///
+/// `UserConfig` is indexed in memory using [`HashMap`] for $O(1)$ lookups by ID.
+/// During deserialization, it enforces referential integrity to ensure that every bullet ID
+/// referenced in [`Preset::default_bullets`] exists in [`UserConfig::bullets`].
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(try_from = "RawUserConfig", into = "RawUserConfig")]
 pub struct UserConfig {
+    /// Map of preset ID to [`Preset`] definition.
     pub presets: HashMap<ConfigIdT, Preset>,
+    /// Map of bullet ID to [`Bullet`] definition.
     pub bullets: HashMap<ConfigIdT, Bullet>,
 }
 
+/// A tailored preset configuration for a specific role or application context.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Preset {
+    /// Unique identifier for this preset (e.g., `"backend"`, `"frontend"`).
     pub id: ConfigIdT,
+    /// Human-readable title of the target role (e.g., `"Backend Engineer"`).
     pub title: String,
+    /// Description explaining the focus and intent of this preset.
     pub description: String,
+    /// Stylistic or tonal direction for generated content (e.g., `"Direct, technical"`).
     pub default_tone: String,
+    /// Introductory paragraph or hook template, supporting `{{.Role}}` and `{{.Company}}` placeholders.
     pub opening_hook: String,
+    /// Concluding paragraph or call-to-action template.
     pub closing_hook: String,
+    /// List of [`Bullet`] IDs to include by default when this preset is active.
     pub default_bullets: Vec<ConfigIdT>,
-
+    /// Additional persona modifiers or archetypes associated with this preset.
     pub additional_archetypes: Vec<Archetype>,
 }
 
+/// An archetype modifier that shapes the emphasis and persona of generated content.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Archetype {
+    /// Unique identifier for this archetype (e.g., `"startup_generalist"`).
     pub id: ConfigIdT,
+    /// Human-readable title of the archetype (e.g., `"Startup Generalist"`).
     pub title: String,
+    /// Guiding prompt or instructions describing the persona to emphasize.
     pub prompt: String,
 }
 
+/// A reusable bullet point highlighting a specific achievement, project, or skill.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Bullet {
+    /// Unique identifier for this bullet (e.g., `"high_throughput_apis"`).
     pub id: ConfigIdT,
+    /// Brief descriptive label for the bullet point.
     pub title: String,
+    /// Categorical tags for filtering and grouping (e.g., `["backend", "api"]`).
     pub tags: Vec<String>,
+    /// The formatted text describing the accomplishment or capability.
     pub text: String,
 }
 
@@ -86,6 +113,7 @@ impl std::default::Default for UserConfig {
     }
 }
 
+/// Raw on-disk TOML representation of user configuration using sequences of tables.
 #[derive(Serialize, Deserialize)]
 struct RawUserConfig {
     pub presets: Vec<Preset>,
@@ -152,10 +180,14 @@ impl From<UserConfig> for RawUserConfig {
     }
 }
 
+/// Errors that can occur during semantic validation of a [`UserConfig`].
 #[derive(Debug)]
 pub enum UserConfigError {
+    /// A preset referenced a bullet point ID in `default_bullets` that was not defined in `bullets`.
     MissingReferencedBullet {
+        /// The ID of the preset containing the invalid reference.
         preset_id: ConfigIdT,
+        /// The bullet ID that could not be found.
         bullet_id: ConfigIdT,
     },
 }

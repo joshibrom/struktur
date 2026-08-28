@@ -1,3 +1,5 @@
+//! User profile models representing personal information, education, work experience, service, and projects.
+
 use serde::{Deserialize, Serialize};
 
 use super::{
@@ -5,62 +7,102 @@ use super::{
     get_project_dirs,
 };
 
+/// Complete personal and professional profile of the user.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Profile {
+    /// Full name of the user.
     pub name: String,
+    /// Primary contact email address.
     pub email: String,
+    /// Contact telephone number.
     pub phone: String,
+    /// Location or residence (e.g., `"San Francisco, CA"`).
     pub location: String,
+    /// Optional link to a personal website or portfolio.
     pub website: Option<ProfileLink>,
+    /// Optional link to a GitHub profile.
     pub github: Option<ProfileLink>,
 
+    /// Chronological list of educational degrees, schools, and coursework.
     pub education: Vec<Education>,
+    /// Chronological list of employment and professional work history.
     pub employment: Vec<Employment>,
+    /// List of professional service, community, or open-source contributions.
     pub professional_service: Vec<ProfessionalService>,
+    /// List of notable personal, academic, or professional projects.
     pub projects: Vec<Project>,
 }
 
+/// Academic degree or educational institution record.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Education {
+    /// Degree or certification earned (e.g., `"B.S. in Computer Science"`).
     pub degree: String,
+    /// Institution or university name.
     pub school: String,
+    /// Starting date in `YYYY-MM` or `YYYY` format.
     pub start_date: String,
+    /// Optional end date or graduation date. If `None`, indicates ongoing studies.
     pub end_date: Option<String>,
+    /// Optional Grade Point Average (GPA).
     pub gpa: Option<f32>,
+    /// List of relevant course titles or academic concentrations.
     pub coursework: Vec<String>,
 }
 
+/// Professional employment or job record.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Employment {
+    /// Job title or position held (e.g., `"Senior Backend Engineer"`).
     pub title: String,
+    /// Company or organization name.
     pub employer: String,
+    /// Work location or remote status (e.g., `"Austin, TX"` or `"Remote"`).
     pub location: String,
+    /// Starting date in `YYYY-MM` or `YYYY` format.
     pub start_date: String,
+    /// Optional end date in `YYYY-MM` or `YYYY` format. If `None`, indicates current employment.
     pub end_date: Option<String>,
+    /// Bullet points describing key accomplishments and responsibilities.
     pub bullets: Vec<String>,
 }
 
+/// Professional service, open-source maintainership, or community leadership record.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct ProfessionalService {
+    /// Role or position (e.g., `"Open Source Contributor & Maintainer"`).
     pub title: String,
+    /// Organization, foundation, or working group name.
     pub organization: String,
+    /// Starting date in `YYYY-MM` or `YYYY` format.
     pub start_date: String,
+    /// Optional end date. If `None`, indicates ongoing service.
     pub end_date: Option<String>,
+    /// Bullet points describing responsibilities and contributions.
     pub bullets: Vec<String>,
 }
 
+/// Notable software, engineering, or portfolio project.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Project {
+    /// Name or title of the project.
     pub title: String,
+    /// Category or domain of the project (e.g., `"Developer Tools"`).
     pub category: String,
+    /// Key technologies, frameworks, or languages used (e.g., `["Rust", "Clap", "TOML"]`).
     pub stack: Vec<String>,
+    /// Optional project date or year of release.
     pub date: Option<String>,
+    /// Bullet points detailing project features, impact, and architecture.
     pub bullets: Vec<String>,
 }
 
+/// A web link with a display title and destination URL.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct ProfileLink {
+    /// Human-readable link title or handle (e.g., `"janedoe.dev"` or `"janedoe"`).
     pub title: String,
+    /// Full web URL (e.g., `"https://janedoe.dev"` or `"https://github.com/janedoe"`).
     pub href: String,
 }
 
