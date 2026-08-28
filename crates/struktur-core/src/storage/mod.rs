@@ -1,20 +1,15 @@
-//! XDG-compliant storage and document persistence subsystem.
+//! Storage and document persistence subsystem.
 //!
 //! This module handles standard configuration and data directory resolution,
-//! document persistence via the [`XDGDocument`] trait, and initialization of
+//! document persistence via the [`Document`] trait, and initialization of
 //! default project configuration and user profile files.
 
 use directories::ProjectDirs;
 
-use crate::{
-    config::UserConfig,
-    profile::Profile,
-    xdg::document::{XDGDocument, XDGError},
-};
+use self::document::{Document, DocumentError};
+use crate::{config::UserConfig, profile::Profile};
 
-pub mod config;
 pub mod document;
-pub mod profile;
 
 /// Ensures that the default project configuration (`config.toml`) and user profile
 /// (`profile.toml`) exist in their respective standard system directories.
@@ -23,9 +18,9 @@ pub mod profile;
 ///
 /// # Errors
 ///
-/// Returns an [`XDGError`] if directory creation or file writing fails, or if the system
+/// Returns a [`DocumentError`] if directory creation or file writing fails, or if the system
 /// directories cannot be determined.
-pub fn ensure_project_files() -> Result<(), XDGError> {
+pub fn ensure_project_files() -> Result<(), DocumentError> {
     if !UserConfig::exists()? {
         let config = UserConfig::default();
         config.save()?;
@@ -41,6 +36,6 @@ pub fn ensure_project_files() -> Result<(), XDGError> {
 ///
 /// Uses standard XDG Base Directory locations on Linux/Unix, and corresponding standard
 /// application directories on macOS and Windows.
-fn get_project_dirs() -> Option<ProjectDirs> {
+pub fn get_project_dirs() -> Option<ProjectDirs> {
     ProjectDirs::from("dev", "joshibrom", "struktur")
 }

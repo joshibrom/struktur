@@ -1,14 +1,14 @@
-//! Document persistence trait and error types for XDG-managed files.
+//! Document persistence trait and error types for configuration and data files.
 
 use std::path::PathBuf;
 
 use serde::{de::DeserializeOwned, Serialize};
 
-/// A document that can be persisted to and loaded from a standard XDG path.
+/// A document that can be persisted to and loaded from a standard system path.
 ///
-/// Types implementing `XDGDocument` must be serializable and deserializable via Serde,
+/// Types implementing `Document` must be serializable and deserializable via Serde,
 /// and provide a default fallback representation.
-pub trait XDGDocument: Serialize + DeserializeOwned + Default {
+pub trait Document: Serialize + DeserializeOwned + Default {
     /// Returns the standard filename for this document (e.g., `"config.toml"` or `"profile.toml"`).
     fn file_name() -> &'static str;
 
@@ -16,15 +16,15 @@ pub trait XDGDocument: Serialize + DeserializeOwned + Default {
     ///
     /// # Errors
     ///
-    /// Returns an [`XDGError`] if the appropriate system directory cannot be located.
-    fn get_path() -> Result<PathBuf, XDGError>;
+    /// Returns a [`DocumentError`] if the appropriate system directory cannot be located.
+    fn get_path() -> Result<PathBuf, DocumentError>;
 
     /// Checks whether the document file currently exists on the filesystem.
     ///
     /// # Errors
     ///
-    /// Returns an [`XDGError`] if path resolution fails or if an I/O error occurs while checking existence.
-    fn exists() -> Result<bool, XDGError> {
+    /// Returns a [`DocumentError`] if path resolution fails or if an I/O error occurs while checking existence.
+    fn exists() -> Result<bool, DocumentError> {
         let path = Self::get_path()?;
         Ok(path.try_exists()?)
     }
@@ -33,9 +33,9 @@ pub trait XDGDocument: Serialize + DeserializeOwned + Default {
     ///
     /// # Errors
     ///
-    /// Returns an [`XDGError::IOError`] if the file cannot be read, or an [`XDGError::DeserializationError`]
+    /// Returns a [`DocumentError::IOError`] if the file cannot be read, or a [`DocumentError::DeserializationError`]
     /// if the file content cannot be parsed into `Self`.
-    fn load() -> Result<Self, XDGError> {
+    fn load() -> Result<Self, DocumentError> {
         let path = Self::get_path()?;
         let content = std::fs::read_to_string(path)?;
         let doc = toml::from_str(&content)?;
@@ -49,9 +49,9 @@ pub trait XDGDocument: Serialize + DeserializeOwned + Default {
     ///
     /// # Errors
     ///
-    /// Returns an [`XDGError::SerializationError`] if serialization fails, or an [`XDGError::IOError`]
+    /// Returns a [`DocumentError::SerializationError`] if serialization fails, or a [`DocumentError::IOError`]
     /// if directory creation or file writing fails.
-    fn save(&self) -> Result<(), XDGError> {
+    fn save(&self) -> Result<(), DocumentError> {
         let path = Self::get_path()?;
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
@@ -63,9 +63,9 @@ pub trait XDGDocument: Serialize + DeserializeOwned + Default {
     }
 }
 
-/// Errors that can occur during XDG path resolution, serialization, deserialization, or file I/O.
+/// Errors that can occur during storage path resolution, serialization, deserialization, or file I/O.
 #[derive(Debug)]
-pub enum XDGError {
+pub enum DocumentError {
     /// The user configuration directory could not be determined on the current system.
     ConfigPathNotFound,
     /// The user data directory could not be determined on the current system.
@@ -78,9 +78,9 @@ pub enum XDGError {
     DeserializationError(toml::de::Error),
 }
 
-impl std::error::Error for XDGError {}
+impl std::error::Error for DocumentError {}
 
-impl std::fmt::Display for XDGError {
+impl std::fmt::Display for DocumentError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ConfigPathNotFound => write!(f, "ConfigPathNotFound"),
@@ -92,19 +92,19 @@ impl std::fmt::Display for XDGError {
     }
 }
 
-impl From<std::io::Error> for XDGError {
+impl From<std::io::Error> for DocumentError {
     fn from(value: std::io::Error) -> Self {
         Self::IOError(value)
     }
 }
 
-impl From<toml::ser::Error> for XDGError {
+impl From<toml::ser::Error> for DocumentError {
     fn from(value: toml::ser::Error) -> Self {
         Self::SerializationError(value)
     }
 }
 
-impl From<toml::de::Error> for XDGError {
+impl From<toml::de::Error> for DocumentError {
     fn from(value: toml::de::Error) -> Self {
         Self::DeserializationError(value)
     }

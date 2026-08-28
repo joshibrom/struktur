@@ -1,6 +1,6 @@
 //! # `struktur-core`
 //!
-//! Core data models, validation, and XDG-compliant document persistence for the `struktur` CLI.
+//! Core data models, validation, and document persistence for the `struktur` CLI.
 //!
 //! ## Overview
 //!
@@ -8,19 +8,18 @@
 //!
 //! * **[`Profile`](crate::profile::Profile)**: Represents personal information, education, employment history, professional service, and portfolio projects.
 //! * **[`UserConfig`](crate::config::UserConfig)**: Represents tailored presets, archetypes, and reusable bullet points with referential integrity validation.
-//! * **[`XDGDocument`](crate::document::XDGDocument)**: A trait providing standardized persistence (`load`, `save`, `exists`) to XDG-compliant system paths.
+//! * **[`Document`](crate::storage::document::Document)**: A trait providing standardized persistence (`load`, `save`, `exists`) to system storage paths.
 //!
 //! ## Quick Start
 //!
 //! ```no_run
 //! use struktur_core::{
 //!     config::UserConfig,
-//!     document::XDGDocument,
-//!     ensure_project_files,
 //!     profile::Profile,
+//!     storage::{document::Document, ensure_project_files},
 //! };
 //!
-//! // Ensure default configuration and profile files exist in XDG directories
+//! // Ensure default configuration and profile files exist in storage directories
 //! ensure_project_files().expect("Failed to initialize project files");
 //!
 //! // Load configuration and user profile
@@ -30,7 +29,6 @@
 //! println!("Loaded profile for {}", profile.name);
 //! ```
 
-pub mod xdg;
-
-pub use xdg::*;
-
+pub mod config;
+pub mod profile;
+pub mod storage;

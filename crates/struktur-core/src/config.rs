@@ -4,8 +4,8 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::{
-    document::{XDGDocument, XDGError},
+use crate::storage::{
+    document::{Document, DocumentError},
     get_project_dirs,
 };
 
@@ -108,7 +108,7 @@ impl std::default::Default for UserConfig {
 
         RawUserConfig { bullets, presets }
             .try_into()
-            .expect("defuault user config must be valid")
+            .expect("default user config must be valid")
     }
 }
 
@@ -125,14 +125,14 @@ impl std::default::Default for RawUserConfig {
     }
 }
 
-impl XDGDocument for UserConfig {
+impl Document for UserConfig {
     fn file_name() -> &'static str {
         "config.toml"
     }
 
-    fn get_path() -> Result<std::path::PathBuf, XDGError> {
+    fn get_path() -> Result<std::path::PathBuf, DocumentError> {
         let path = get_project_dirs()
-            .ok_or(XDGError::ConfigPathNotFound)?
+            .ok_or(DocumentError::ConfigPathNotFound)?
             .config_dir()
             .to_owned();
         Ok(path.join(Self::file_name()))

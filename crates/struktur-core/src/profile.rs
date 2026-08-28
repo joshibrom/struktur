@@ -2,8 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::{
-    document::{XDGDocument, XDGError},
+use crate::storage::{
+    document::{Document, DocumentError},
     get_project_dirs,
 };
 
@@ -200,14 +200,14 @@ impl std::default::Default for Profile {
     }
 }
 
-impl XDGDocument for Profile {
+impl Document for Profile {
     fn file_name() -> &'static str {
         "profile.toml"
     }
 
-    fn get_path() -> Result<std::path::PathBuf, super::document::XDGError> {
+    fn get_path() -> Result<std::path::PathBuf, DocumentError> {
         let path = get_project_dirs()
-            .ok_or(XDGError::DataPathNotFound)?
+            .ok_or(DocumentError::DataPathNotFound)?
             .data_dir()
             .to_owned();
         Ok(path.join(Self::file_name()))
