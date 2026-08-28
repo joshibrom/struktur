@@ -158,3 +158,56 @@ impl Into<RawUserConfig> for UserConfig {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config_validity() {
+        let raw = RawUserConfig::default();
+        let config_res = UserConfig::try_from(raw);
+        assert!(config_res.is_ok());
+
+        let config = config_res.unwrap();
+        assert_eq!(config.presets.len(), 1);
+        assert_eq!(config.bullets.len(), 2);
+        assert!(config.presets.contains_key("backend"));
+    }
+
+    #[test]
+    fn test_missing_referenced_bullet_error() {
+        let raw = RawUserConfig {
+            presets: vec![Preset {
+                id: "test".into(),
+                title: "Test".into(),
+                description: "Test".into(),
+                default_tone: "Test".into(),
+                opening_hook: "Test".into(),
+                closing_hook: "Test".into(),
+                default_bullets: vec!["non_existent_bullet".into()],
+                additional_archetypes: vec![],
+            }],
+            bullets: vec![],
+        };
+
+        let result = UserConfig::try_from(raw);
+        assert!(matches!(
+            result,
+            Err(UserConfigError::MissingReferencedBullet { .. })
+        ));
+    }
+
+    #[test]
+    fn test_default_toml_roundtrip() {
+        let raw = RawUserConfig::default();
+        let serialized = toml::to_string_pretty(&raw).expect("serialization should succeed");
+        let deserialized: RawUserConfig =
+            toml::from_str(&serialized).expect("deserialization should succeed");
+        let config: UserConfig = deserialized
+            .try_into()
+            .expect("conversion to UserConfig should succeed");
+        assert_eq!(config.presets.len(), 1);
+        assert_eq!(config.bullets.len(), 2);
+    }
+}
