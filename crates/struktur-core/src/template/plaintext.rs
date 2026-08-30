@@ -1,9 +1,12 @@
+//! Plaintext / Markdown cover letter template implementation.
+
 use serde::{Deserialize, Serialize};
 
 use crate::template::RenderableTemplate;
 
-#[derive(Serialize, Deserialize)]
-pub struct PlaintextTemplate {}
+/// Plaintext cover letter template suitable for terminal printing and clipboard export.
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct PlaintextTemplate;
 
 impl RenderableTemplate for PlaintextTemplate {
     fn file_name() -> &'static str {
@@ -15,6 +18,7 @@ impl RenderableTemplate for PlaintextTemplate {
     }
 }
 
+/// The embedded default Tera template for plaintext cover letters.
 const DEFAULT_TEMPLATE: &str = r#"
 {{ profile.name }}
 {{ profile.email }} | {{ profile.phone }} | {{ profile.location }}
@@ -31,6 +35,7 @@ Key Highlights:
 {% for bullet in bullets -%}
 * {{ bullet.text }}
 {% endfor %}
+
 {{ closing_hook }}
 
 Sincerely,

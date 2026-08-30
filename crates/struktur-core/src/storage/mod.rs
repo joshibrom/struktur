@@ -15,34 +15,26 @@ use crate::{
 
 pub mod document;
 
+/// Errors that can occur during storage subsystem initialization.
 #[derive(thiserror::Error, Debug)]
 pub enum StorageInitError {
+    /// An error occurred while initializing or saving a project document (`config.toml` or `profile.toml`).
     #[error("DocumentError: {0}")]
-    DocumentError(DocumentError),
+    DocumentError(#[from] DocumentError),
+
+    /// An error occurred while creating or writing default template files.
     #[error("TemplateError: {0}")]
-    TemplateError(TemplateError),
+    TemplateError(#[from] TemplateError),
 }
 
-impl From<DocumentError> for StorageInitError {
-    fn from(value: DocumentError) -> Self {
-        Self::DocumentError(value)
-    }
-}
-
-impl From<TemplateError> for StorageInitError {
-    fn from(value: TemplateError) -> Self {
-        Self::TemplateError(value)
-    }
-}
-
-/// Ensures that the default project configuration (`config.toml`) and user profile
-/// (`profile.toml`) exist in their respective standard system directories.
+/// Ensures that the default project configuration (`config.toml`), user profile
+/// (`profile.toml`), and template files exist in their respective standard system directories.
 ///
-/// If either file does not already exist on disk, a default instance is created and saved.
+/// If any required file does not already exist on disk, a default instance is created and saved.
 ///
 /// # Errors
 ///
-/// Returns a [`DocumentError`] if directory creation or file writing fails, or if the system
+/// Returns a [`StorageInitError`] if directory creation or file writing fails, or if the system
 /// directories cannot be determined.
 pub fn init_storage() -> Result<(), StorageInitError> {
     if !UserConfig::exists()? {

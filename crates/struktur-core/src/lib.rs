@@ -16,11 +16,11 @@
 //! use struktur_core::{
 //!     config::UserConfig,
 //!     profile::Profile,
-//!     storage::{document::Document, ensure_project_files},
+//!     storage::{document::Document, init_storage},
 //! };
 //!
-//! // Ensure default configuration and profile files exist in storage directories
-//! ensure_project_files().expect("Failed to initialize project files");
+//! // Ensure default configuration, profile, and template files exist in storage directories
+//! init_storage().expect("Failed to initialize project files");
 //!
 //! // Load configuration and user profile
 //! let config = UserConfig::load().expect("Failed to load user config");
