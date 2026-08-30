@@ -4,6 +4,7 @@ use crate::cmd::{Cli, Commands};
 
 mod actions;
 mod cmd;
+mod helpers;
 
 pub fn run(cli: Cli) -> anyhow::Result<()> {
     match &cli.command {
@@ -13,7 +14,12 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
             company,
             role,
             date,
-        } => actions::generate(preset.clone(), company.clone(), role.clone(), date.clone()),
+        } => actions::generate(
+            preset.clone(),
+            company.clone(),
+            role.clone(),
+            date.clone().unwrap_or(helpers::today_as_string()),
+        ),
     }
 }
 

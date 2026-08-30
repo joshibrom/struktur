@@ -18,6 +18,6 @@ pub enum Commands {
         #[arg(short, long)]
         role: String,
         #[arg(short, long)]
-        date: String,
+        date: Option<String>,
     },
 }
