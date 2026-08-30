@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use serde::Serialize;
 use tera::Tera;
 
@@ -91,7 +93,7 @@ impl TemplateContext {
 #[derive(thiserror::Error, Debug)]
 pub enum TemplateError {
     #[error("Failed to load template: {0}")]
-    TemplateLoadError(std::io::Error),
+    TemplateIoError(std::io::Error),
     #[error("Failed to parse template: {0}")]
     TemplateAddError(tera::Error),
     #[error("Failed to render template: {0}")]
@@ -114,6 +116,10 @@ pub trait RenderableTemplate {
             .config_dir()
             .to_owned();
         Ok(path.join(format!("templates/{}", Self::file_name())))
+    }
+
+    fn exists() -> Result<bool, TemplateError> {
+        Ok(Self::get_path()?.exists())
     }
 
     fn load() -> Result<String, std::io::Error> {
@@ -146,5 +152,25 @@ pub trait RenderableTemplate {
 
         tera.render("main", &tera_ctx)
             .map_err(TemplateError::TemplateRenderError)
+    }
+
+    fn write_default_template() -> Result<(), TemplateError> {
+        let path = Self::get_path()?;
+        if Self::exists()? {
+            return Ok(());
+        }
+
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        let mut file = std::fs::File::create(path)?;
+        Ok(file.write_all(Self::get_default_template().as_bytes())?)
+    }
+}
+
+impl From<std::io::Error> for TemplateError {
+    fn from(value: std::io::Error) -> Self {
+        Self::TemplateIoError(value)
     }
 }

@@ -7,9 +7,31 @@
 use directories::ProjectDirs;
 
 use self::document::{Document, DocumentError};
-use crate::{config::UserConfig, profile::Profile};
+use crate::{
+    config::UserConfig,
+    profile::Profile,
+    template::{RenderableTemplate, TemplateError, plaintext::PlaintextTemplate},
+};
 
 pub mod document;
+
+#[derive(Debug)]
+pub enum StorageInitError {
+    DocumentError(DocumentError),
+    TemplateError(TemplateError),
+}
+
+impl From<DocumentError> for StorageInitError {
+    fn from(value: DocumentError) -> Self {
+        Self::DocumentError(value)
+    }
+}
+
+impl From<TemplateError> for StorageInitError {
+    fn from(value: TemplateError) -> Self {
+        Self::TemplateError(value)
+    }
+}
 
 /// Ensures that the default project configuration (`config.toml`) and user profile
 /// (`profile.toml`) exist in their respective standard system directories.
@@ -20,7 +42,7 @@ pub mod document;
 ///
 /// Returns a [`DocumentError`] if directory creation or file writing fails, or if the system
 /// directories cannot be determined.
-pub fn ensure_project_files() -> Result<(), DocumentError> {
+pub fn init_storage() -> Result<(), StorageInitError> {
     if !UserConfig::exists()? {
         let config = UserConfig::default();
         config.save()?;
@@ -28,6 +50,9 @@ pub fn ensure_project_files() -> Result<(), DocumentError> {
     if !Profile::exists()? {
         let profile = Profile::default();
         profile.save()?;
+    }
+    if !PlaintextTemplate::exists()? {
+        PlaintextTemplate::write_default_template()?;
     }
     Ok(())
 }
