@@ -83,7 +83,10 @@ Stored in `config.toml` (XDG config directory). Contains tailoring configuration
 
 ## 4. Storage & Persistence Architecture
 
-Persistence is abstracted via the `Document` trait in `struktur_core::storage::document`:
+Persistence is abstracted via two complementary mechanisms:
+
+1. **Structured Data Documents** ([`Document`](crate::storage::document::Document) trait):
+   Provides standardized `load()`, `save()`, and `exists()` methods for TOML data (`config.toml` and `profile.toml`).
 
 ```rust
 pub trait Document: Serialize + DeserializeOwned + Default {
@@ -95,6 +98,9 @@ pub trait Document: Serialize + DeserializeOwned + Default {
 }
 ```
 
+2. **Renderable Templates** ([`RenderableTemplate`](crate::template::RenderableTemplate) trait):
+   Manages user-customizable template files (in `~/.config/struktur/templates/`) with embedded static fallback defaults (`PlaintextTemplate`).
+
 ### Path Resolution
 Paths are resolved using standard platform conventions via the `directories` crate:
 * **Linux/Unix**: XDG Base Directory Specification (`~/.config/struktur/`, `~/.local/share/struktur/`).
@@ -103,9 +109,9 @@ Paths are resolved using standard platform conventions via the `directories` cra
 
 ---
 
-## 5. Document Generation Pipeline *(Target Design)*
+## 5. Document Generation Pipeline
 
-`struktur` is designed to support two generation workflows for application materials:
+`struktur` supports flexible generation workflows for tailored application materials:
 
 ```text
                      ┌───────────────────────────┐
@@ -125,8 +131,8 @@ Paths are resolved using standard platform conventions via the `directories` cra
         [ Deterministic Mode ]          [ LLM-Assisted Mode ]
         ┌───────────────────────┐       ┌───────────────────────┐
         │ Template Engine       │       │ Prompt Assembly       │
-        │ Interpolates Hooks &  │       │ (Context + Persona)   │
-        │ Assembles Bullets     │       ├───────────────────────┤
+        │ Pre-renders Hooks &   │       │ (Context + Persona)   │
+        │ Resolves Bullets      │       ├───────────────────────┤
         │                       │       │ Provider Request      │
         │                       │       │ Generates Variations  │
         └───────────┬───────────┘       └───────────┬───────────┘
@@ -141,15 +147,17 @@ Paths are resolved using standard platform conventions via the `directories` cra
                  ┌─────────────────┼─────────────────┐
                  │                 │                 │
                  ▼                 ▼                 ▼
-          [ Plaintext/MD ]    [ Clipboard ]    [ Typst PDF ]
+          [ Terminal Stdout ]  [ Clipboard ]   [ Typst PDF ]
+          [ / File Output   ]                  (Planned)
 ```
 
-1. **Deterministic Mode**: Directly interpolates template variables (`{{.Role}}`, `{{.Company}}`) into opening/closing hooks and formats selected bullet points.
-2. **LLM-Assisted Mode**: Constructs a structured prompt incorporating profile data, selected archetypes, tone directives, and role information to generate multiple variations for user selection.
+1. **Deterministic Mode** *(Implemented)*: Pre-renders preset opening/closing hooks with dynamic context (`{{ role }}`, `{{ company }}`), resolves matching bullet accomplishments into [`TemplateContext`](crate::template::TemplateContext), and compiles via Tera against disk or fallback templates.
+2. **LLM-Assisted Mode** *(Planned)*: Constructs a structured prompt incorporating profile data, selected archetypes, tone directives, and role information to generate multiple variations for user review.
 3. **Export Targets**:
-   * Clipboard (for copy-pasting into job application forms).
-   * Markdown file.
-   * Compiled PDF generated via Typst.
+   * **Terminal stdout**: Direct ANSI/text stream.
+   * **Clipboard**: Cross-platform desktop clipboard integration with automatic WSL `clip.exe` bridging.
+   * **File Output**: Formatted plain text / markdown file writing.
+   * **Typst PDF** *(Planned)*: Compiled PDF generated via Typst.
 
 ---
 

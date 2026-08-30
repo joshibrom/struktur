@@ -10,10 +10,10 @@ This roadmap outlines the phased development plan for `struktur`, tracking compl
 [ Phase 1: Core Foundation ]          ✅ Completed
              │
              ▼
-[ Phase 2: Template & Assembly ]      🔄 In Progress / Next
+[ Phase 2: Template & Generation ]    ✅ Completed
              │
              ▼
-[ Phase 3: CLI Inspection & Mgmt ]    ⏳ Planned
+[ Phase 3: CLI Inspection & Mgmt ]    🔄 Next Milestone
              │
              ▼
 [ Phase 4: SQLite Job Tracker ]       ⏳ Planned
@@ -41,12 +41,15 @@ This roadmap outlines the phased development plan for `struktur`, tracking compl
 
 ---
 
-## Phase 2: Template Interpolation & Document Assembly (Next)
+## Phase 2: Template Interpolation & Document Generation (Completed)
 
-* [ ] **Template Engine**: Build variable substitution engine supporting `{{.Role}}`, `{{.Company}}`, `{{.Date}}`, and candidate profile fields.
-* [ ] **Assembly Pipeline**: Engine function in `struktur-core` that combines an active `Preset`, target company/role, selected `Bullet` items, and candidate data into an intermediate `TailoredDocument` structure.
-* [ ] **Plaintext & Markdown Exporters**: Renderers to format a `TailoredDocument` into clean markdown or plaintext for clipboard export.
-* [ ] **Deterministic `generate` Command**: Add `struktur generate --preset <id> --company <name> --role <title>` to CLI.
+* [x] **Template Engine**: Integrated Tera templating supporting Jinja2 syntax (`{{ role }}`, `{{ company }}`, `{{ date }}`, `{{ profile.* }}`).
+* [x] **Hook Pre-Rendering**: Dynamic evaluation and pre-rendering of preset opening and closing hooks inside `TemplateContext`.
+* [x] **Document Template Trait**: `RenderableTemplate` trait managing user filesystem overrides (`~/.config/struktur/templates/`) with embedded static fallbacks.
+* [x] **Plaintext & Markdown Template**: `PlaintextTemplate` formatting candidate header, date, recipient, opening hook, bullet points, and closing hook.
+* [x] **CLI `generate` Command**: `struktur generate --preset <id> --company <name> --role <title> [--date <date>] [--output <file>] [--clipboard]`.
+* [x] **Multi-Target Output Routing**: Clean output delivery to terminal stdout, file writing, or system clipboard (with WSL `clip.exe` bridge).
+* [x] **Testing & Verification**: Unit tests for context pre-rendering, template fallback, and full cover letter compilation.
 
 ---
 
