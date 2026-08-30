@@ -1,21 +1,42 @@
+//! Command-line interface entrypoint for `struktur`.
+
 use clap::Parser;
 
 use crate::cmd::{Cli, Commands};
 
+mod actions;
 mod cmd;
+mod helpers;
 
-pub fn run(cli: Cli) {
+/// Dispatches parsed CLI commands to their respective action handlers.
+///
+/// # Errors
+///
+/// Returns an error if the executed command action fails.
+pub fn run(cli: Cli) -> anyhow::Result<()> {
     match &cli.command {
-        Commands::Init => {
-            // TODO: Handle error better
-            struktur_core::storage::ensure_project_files()
-                .expect("project files should be creatable");
-            println!("Created project files."); // TODO: Better logging
-        }
+        Commands::Init => actions::init(),
+        Commands::Generate {
+            preset,
+            company,
+            role,
+            date,
+            output,
+            clipboard,
+        } => actions::generate(
+            preset.clone(),
+            company.clone(),
+            role.clone(),
+            date.clone().unwrap_or(helpers::today_as_string()),
+            helpers::OutputPath::from_cmd_args(output, clipboard),
+        ),
     }
 }
 
 fn main() {
     let cli = Cli::parse();
-    run(cli);
+    if let Err(err) = run(cli) {
+        eprintln!("Error: {err}");
+        std::process::exit(1);
+    }
 }

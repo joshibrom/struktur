@@ -12,9 +12,9 @@ A local-first CLI and terminal workstation for generating tailored job applicati
 * **Modular Bullet Repository**: Reusable, tagged accomplishment bullets that can be dynamically selected and assembled into tailored materials.
 * **Role Presets & Archetypes**: Configurable presets (e.g., *Backend Engineer*, *Frontend Engineer*) with custom tone, opening/closing hooks, and persona modifiers.
 * **Dual Generation Modes**:
-  * *Deterministic Mode* (In Development): Fast template-based assembly using dynamic variable interpolation (`{{.Role}}`, `{{.Company}}`).
+  * *Deterministic Mode*: Fast template-based assembly using dynamic variable interpolation (`{{ role }}`, `{{ company }}`). Supports output to terminal stdout, file writing, or system clipboard.
   * *LLM-Assisted Mode* (Planned): AI-augmented drafting for generating multiple tailored variations for review.
-* **Typst-Powered PDF Export** (Planned): High-performance, reproducible PDF document compilation via Typst without heavy TeX distributions.
+* **Typst-Powered PDF Export* (Planned): High-performance, reproducible PDF document compilation via Typst without heavy TeX distributions.
 * **Local Application Tracking** (Planned): Built-in SQLite database to track job applications, submission dates, notes, and the exact materials used.
 * **Multi-Interface Design**: Scriptable CLI for automation and an interactive [Ratatui](https://github.com/ratatui/ratatui) TUI (Planned) for managing applications and drafting.
 
@@ -61,16 +61,31 @@ cargo test
 
 ### Initial Setup
 
-Initialize default configuration and profile files in standard system directories (following the XDG Base Directory Specification on Linux):
+Initialize default configuration, profile, and template files in standard system directories:
 
 ```bash
 cargo run -p struktur-cli -- init
 ```
 
 Default files created:
-
 * **Configuration**: `~/.config/struktur/config.toml` (Presets, archetypes, bullet library)
 * **Profile**: `~/.local/share/struktur/profile.toml` (Work history, education, projects, contact links)
+* **Templates**: `~/.config/struktur/templates/plaintext.tera` (Customizable cover letter layout)
+
+### Generating Cover Letters
+
+Generate tailored materials using defined presets and target job parameters:
+
+```bash
+# Print to terminal stdout
+cargo run -p struktur-cli -- generate --preset backend --company Stripe --role "Senior Backend Engineer"
+
+# Copy directly to clipboard (supports native desktop & WSL)
+cargo run -p struktur-cli -- generate --preset backend --company Stripe --role "Senior Backend Engineer" --clipboard
+
+# Save directly to a file
+cargo run -p struktur-cli -- generate --preset backend --company Stripe --role "Senior Backend Engineer" --output cover_letter.txt
+```
 
 ---
 
