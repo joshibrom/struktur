@@ -1,3 +1,5 @@
+//! Command-line interface entrypoint for `struktur`.
+
 use clap::Parser;
 
 use crate::cmd::{Cli, Commands};
@@ -6,6 +8,11 @@ mod actions;
 mod cmd;
 mod helpers;
 
+/// Dispatches parsed CLI commands to their respective action handlers.
+///
+/// # Errors
+///
+/// Returns an error if the executed command action fails.
 pub fn run(cli: Cli) -> anyhow::Result<()> {
     match &cli.command {
         Commands::Init => actions::init(),
