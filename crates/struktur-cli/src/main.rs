@@ -2,16 +2,20 @@ use clap::Parser;
 
 use crate::cmd::{Cli, Commands};
 
+mod actions;
 mod cmd;
 
 pub fn run(cli: Cli) {
     match &cli.command {
-        Commands::Init => {
-            // TODO: Handle error better
-            struktur_core::storage::init_storage().expect("project files should be creatable");
-            println!("Created project files."); // TODO: Better logging
-        }
+        Commands::Init => actions::init(),
+        Commands::Generate {
+            preset,
+            company,
+            role,
+            date,
+        } => actions::generate(preset.clone(), company.clone(), role.clone(), date.clone()),
     }
+    .expect("Failed to run command")
 }
 
 fn main() {

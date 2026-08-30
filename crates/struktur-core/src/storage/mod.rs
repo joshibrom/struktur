@@ -15,9 +15,11 @@ use crate::{
 
 pub mod document;
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum StorageInitError {
+    #[error("DocumentError: {0}")]
     DocumentError(DocumentError),
+    #[error("TemplateError: {0}")]
     TemplateError(TemplateError),
 }
 
