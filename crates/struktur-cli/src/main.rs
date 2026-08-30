@@ -14,11 +14,14 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
             company,
             role,
             date,
+            output,
+            clipboard,
         } => actions::generate(
             preset.clone(),
             company.clone(),
             role.clone(),
             date.clone().unwrap_or(helpers::today_as_string()),
+            helpers::OutputPath::from_cmd_args(output, clipboard),
         ),
     }
 }

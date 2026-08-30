@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -11,13 +13,18 @@ pub struct Cli {
 pub enum Commands {
     Init,
     Generate {
-        #[arg(short, long)]
+        #[arg(long)]
         preset: String,
-        #[arg(short, long)]
+        #[arg(long)]
         company: String,
-        #[arg(short, long)]
+        #[arg(long)]
         role: String,
-        #[arg(short, long)]
+        #[arg(long)]
         date: Option<String>,
+
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        #[arg(short, long)]
+        clipboard: bool,
     },
 }

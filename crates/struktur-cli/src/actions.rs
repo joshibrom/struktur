@@ -6,14 +6,21 @@ use struktur_core::{
     template::{RenderableTemplate, TemplateContext, plaintext::PlaintextTemplate},
 };
 
+use crate::helpers::{OutputContentType, OutputPath};
+
 pub fn init() -> AnyResult<()> {
-    // TODO: Handle error better
     struktur_core::storage::init_storage()?;
-    println!("Created project files."); // TODO: Better logging
+    println!("Created project files.");
     Ok(())
 }
 
-pub fn generate(preset_name: String, company: String, role: String, date: String) -> AnyResult<()> {
+pub fn generate(
+    preset_name: String,
+    company: String,
+    role: String,
+    date: String,
+    output_path: OutputPath,
+) -> AnyResult<()> {
     let config = UserConfig::load()?;
     let profile = Profile::load()?;
 
@@ -26,7 +33,5 @@ pub fn generate(preset_name: String, company: String, role: String, date: String
 
     let content = PlaintextTemplate::render(&context)?;
 
-    println!("{content}"); // TODO: Write to file / clipboard
-
-    Ok(())
+    output_path.output(content, OutputContentType::CoverLetter)
 }
