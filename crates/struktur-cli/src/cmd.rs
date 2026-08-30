@@ -10,4 +10,14 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     Init,
+    Generate {
+        #[arg(short, long)]
+        preset: String,
+        #[arg(short, long)]
+        company: String,
+        #[arg(short, long)]
+        role: String,
+        #[arg(short, long)]
+        date: String,
+    },
 }
