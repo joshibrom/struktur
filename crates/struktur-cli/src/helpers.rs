@@ -27,15 +27,20 @@ impl OutputPath {
         content_type: OutputContentType,
     ) -> AnyResult<()> {
         match self {
-            Self::Terminal => Ok(println!("{}", content.into())),
+            Self::Terminal => {
+                println!("{}", content.into());
+                Ok(())
+            }
             Self::Clipboard => {
                 Self::copy_to_clipboard(content.into())?;
-                Ok(println!("Copied {content_type} to clipboard."))
+                println!("Copied {content_type} to clipboard.");
+                Ok(())
             }
             Self::File(path) => {
                 let mut file = std::fs::File::create(&path)?;
                 file.write_all(content.into().as_bytes())?;
-                Ok(println!("Wrote {content_type} to {}.", path.display()))
+                println!("Wrote {content_type} to {}.", path.display());
+                Ok(())
             }
         }
     }
@@ -53,7 +58,7 @@ impl OutputPath {
                 return Ok(());
             }
         }
-        cli_clipboard::set_contents(content.into())
+        cli_clipboard::set_contents(content)
             .map_err(|e| anyhow::anyhow!("Could not write to clipboard: {e}"))
     }
 }
