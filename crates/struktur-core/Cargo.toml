@@ -15,3 +15,4 @@ uuid.workspace = true
 directories.workspace = true
 rusqlite.workspace = true
 toml = "1.1.4"
+tera = { version = "2", features = ["fast"] }
