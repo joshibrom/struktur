@@ -73,6 +73,8 @@ impl std::fmt::Display for OutputContentType {
 }
 
 pub fn today_as_string() -> String {
-    let today = chrono::Local::now();
-    today.format("%d %B %Y").to_string()
+    let today = time::OffsetDateTime::now_utc().date();
+    let format = time::format_description::parse_borrowed::<3>("[day] [month repr:long] [year]")
+        .expect("static date format string should be valid");
+    today.format(&format).unwrap_or_else(|_| today.to_string())
 }
