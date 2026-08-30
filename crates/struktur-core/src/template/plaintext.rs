@@ -11,7 +11,7 @@ impl RenderableTemplate for PlaintextTemplate {
     }
 
     fn get_default_template() -> &'static str {
-        DEFAULT_TEMPLATE
+        DEFAULT_TEMPLATE.trim()
     }
 }
 

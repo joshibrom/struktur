@@ -93,8 +93,8 @@ impl std::default::Default for UserConfig {
             title: "Backend Engineer".into(),
             description: "Focus on API design, high throughput, and database optimization.".into(),
             default_tone: "Direct, technical, emphasizing concurrency, latency reduction, and data integrity.".into(),
-            opening_hook: "I am interested in the {{.Role}} position at {{.Company}}. With a strong background building high-throughput backend services and concurrent data processing pipelines, I focus on delivering scalable, reliable systems.".into(),
-            closing_hook: "I look forward to discussing how my experience in backend architecture and pipeline optimization can support engineering initiatives at {{.Company}}.".into(),
+            opening_hook: "I am interested in the {{role}} position at {{company}}. With a strong background building high-throughput backend services and concurrent data processing pipelines, I focus on delivering scalable, reliable systems.".into(),
+            closing_hook: "I look forward to discussing how my experience in backend architecture and pipeline optimization can support engineering initiatives at {{company}}.".into(),
             default_bullets: vec![
                 "high_throughput_apis".into(),
                 "database_optimization".into(),
