@@ -214,8 +214,11 @@ pub trait RenderableTemplate {
         let tera_ctx = tera::Context::from_serialize(context)
             .map_err(TemplateError::TemplateContextSerializationError)?;
 
-        tera.render("main", &tera_ctx)
-            .map_err(TemplateError::TemplateRenderError)
+        let rendering = tera
+            .render("main", &tera_ctx)
+            .map_err(TemplateError::TemplateRenderError)?;
+
+        Ok(rendering.trim().to_string())
     }
 
     /// Writes the embedded default template to disk if it does not already exist.

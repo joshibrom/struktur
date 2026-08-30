@@ -1,23 +1,56 @@
+//! Command-line argument definitions and parser configuration.
+
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
+/// Command-line parser for `struktur`.
+#[derive(Parser, Debug)]
+#[command(
+    name = "struktur",
+    version,
+    about = "A local-first CLI for generating tailored job application materials",
+    long_about = "struktur is a local-first workstation for managing structured candidate profiles, \
+                  reusable accomplishment bullets, and generating tailored cover letters and application materials."
+)]
 pub struct Cli {
+    /// The subcommand to execute.
     #[command(subcommand)]
     pub command: Commands,
 }
 
-#[derive(Subcommand)]
+/// Available CLI subcommands.
+#[derive(Subcommand, Debug)]
 pub enum Commands {
+    /// Initialize default configuration (`config.toml`), user profile (`profile.toml`), and template files.
+    #[command(about = "Initialize default configuration, profile, and template files")]
     Init,
+
+    /// Generate a tailored cover letter from a preset and candidate profile.
+    #[command(about = "Generate a tailored cover letter")]
     Generate {
-        #[arg(short, long)]
+        /// ID of the preset to use (e.g. "backend").
+        #[arg(long, help = "ID of the role preset to use")]
         preset: String,
-        #[arg(short, long)]
+
+        /// Target company or organization name.
+        #[arg(long, help = "Target company or organization name")]
         company: String,
-        #[arg(short, long)]
+
+        /// Target job title or role position.
+        #[arg(long, help = "Target job title or role position")]
         role: String,
-        #[arg(short, long)]
-        date: String,
+
+        /// Application date (defaults to today's date if omitted).
+        #[arg(long, help = "Application date (defaults to current date if omitted)")]
+        date: Option<String>,
+
+        /// Optional file path to write the generated document to.
+        #[arg(short, long, help = "Write output to the specified file path")]
+        output: Option<PathBuf>,
+
+        /// Copy the generated document directly to the system clipboard.
+        #[arg(short, long, help = "Copy output to the system clipboard")]
+        clipboard: bool,
     },
 }
