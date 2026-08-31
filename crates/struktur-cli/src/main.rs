@@ -2,11 +2,12 @@
 
 use clap::Parser;
 
-use crate::cmd::{Cli, Commands};
+use crate::cmd::{Cli, Commands, ListCommand};
 
 mod actions;
 mod cmd;
 mod helpers;
+mod listing;
 
 /// Dispatches parsed CLI commands to their respective action handlers.
 ///
@@ -30,6 +31,9 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
             date.clone().unwrap_or(helpers::today_as_string()),
             helpers::OutputPath::from_cmd_args(output, clipboard),
         ),
+        Commands::List(lc) => match lc {
+            ListCommand::Presets => actions::list_presets(),
+        },
     }
 }
 

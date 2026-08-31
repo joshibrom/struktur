@@ -53,4 +53,13 @@ pub enum Commands {
         #[arg(short, long, help = "Copy output to the system clipboard")]
         clipboard: bool,
     },
+
+    #[command(subcommand)]
+    List(ListCommand),
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ListCommand {
+    #[command()]
+    Presets,
 }

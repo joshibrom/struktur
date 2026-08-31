@@ -8,14 +8,19 @@ use struktur_core::{
     template::{RenderableTemplate, TemplateContext, plaintext::PlaintextTemplate},
 };
 
-use crate::helpers::{OutputContentType, OutputPath};
+use crate::{
+    helpers::{OutputContentType, OutputPath},
+    listing,
+};
+
+pub type ActionResult = AnyResult<()>;
 
 /// Initializes project storage by creating default `config.toml`, `profile.toml`, and template files.
 ///
 /// # Errors
 ///
 /// Returns an error if directory creation or file writing fails.
-pub fn init() -> AnyResult<()> {
+pub fn init() -> ActionResult {
     struktur_core::storage::init_storage()?;
     println!("Created project files.");
     Ok(())
@@ -33,7 +38,7 @@ pub fn generate(
     role: String,
     date: String,
     output_path: OutputPath,
-) -> AnyResult<()> {
+) -> ActionResult {
     let config = UserConfig::load()?;
     let profile = Profile::load()?;
 
@@ -47,4 +52,14 @@ pub fn generate(
     let content = PlaintextTemplate::render(&context)?;
 
     output_path.output(content, OutputContentType::CoverLetter)
+}
+
+pub fn list_presets() -> ActionResult {
+    let config = UserConfig::load()?;
+
+    let table = listing::presets::list_presets_as_table(&config);
+
+    println!("{table}");
+
+    Ok(())
 }

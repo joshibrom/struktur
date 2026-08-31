@@ -17,3 +17,4 @@ time = { version = "0.3", features = ["serde", "formatting", "parsing"] }
 uuid = { version = "1.8", features = ["v4", "fast-rng"] }
 directories = "5.0"
 rusqlite = { version = "0.31", features = ["bundled", "time"] }
+tabled = "0.21.0"
