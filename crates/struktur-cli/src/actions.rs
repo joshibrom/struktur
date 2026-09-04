@@ -54,6 +54,7 @@ pub fn generate(
     output_path.output(content, OutputContentType::CoverLetter)
 }
 
+/// Lists all configured presets formatted as a terminal table.
 pub fn list_presets() -> ActionResult {
     let config = UserConfig::load()?;
 
@@ -64,6 +65,7 @@ pub fn list_presets() -> ActionResult {
     Ok(())
 }
 
+/// Lists all configured accomplishment bullets, optionally filtered by tag.
 pub fn list_bullets(tag_filter: &Option<String>) -> ActionResult {
     let config = UserConfig::load()?;
 
@@ -74,10 +76,11 @@ pub fn list_bullets(tag_filter: &Option<String>) -> ActionResult {
     Ok(())
 }
 
+/// Displays the filesystem paths and existence status of all project files.
 pub fn get_status() -> ActionResult {
-    let table = inspection::status::check_as_table();
-
-    println!("{table}");
+    inspection::status::check()
+        .into_iter()
+        .for_each(|check| println!("{check}"));
 
     Ok(())
 }

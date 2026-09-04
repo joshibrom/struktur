@@ -1,104 +1,62 @@
+//! Filesystem status and diagnostics inspection.
+
+use std::path::PathBuf;
+
 use struktur_core::{
     config::UserConfig,
     profile::Profile,
-    storage::document::{Document, DocumentError},
-    template::{RenderableTemplate, TemplateError, plaintext::PlaintextTemplate},
+    storage::document::Document,
+    template::{RenderableTemplate, plaintext::PlaintextTemplate},
 };
-use tabled::Tabled;
 
-enum FileStatus {
-    Exists,
-    DoesNotExist,
-    CouldNotVerify(String),
+/// Health and existence check for a single project file.
+pub struct FileCheck {
+    name: &'static str,
+    path: Option<PathBuf>,
+    exists: bool,
 }
 
-impl From<Result<bool, DocumentError>> for FileStatus {
-    fn from(value: Result<bool, DocumentError>) -> Self {
-        match value {
-            Ok(b) => {
-                if b {
-                    Self::Exists
-                } else {
-                    Self::DoesNotExist
-                }
-            }
-            Err(err) => Self::CouldNotVerify(err.to_string()),
-        }
-    }
-}
-
-impl From<Result<bool, TemplateError>> for FileStatus {
-    fn from(value: Result<bool, TemplateError>) -> Self {
-        match value {
-            Ok(b) => {
-                if b {
-                    Self::Exists
-                } else {
-                    Self::DoesNotExist
-                }
-            }
-            Err(err) => Self::CouldNotVerify(err.to_string()),
-        }
-    }
-}
-
-impl std::fmt::Display for FileStatus {
+impl std::fmt::Display for FileCheck {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Exists => write!(f, "✓"),
-            Self::DoesNotExist => write!(f, "✗"),
-            Self::CouldNotVerify(msg) => write!(f, "? ({msg})"),
-        }
+        let mark = if self.exists { "✓" } else { "✗" };
+        let path_str = match &self.path {
+            Some(p) => p.display().to_string(),
+            None => "path unknown".to_string(),
+        };
+        let hint = if self.exists {
+            String::new()
+        } else {
+            " (missing - run 'struktur init')".to_string()
+        };
+
+        write!(f, "  {mark}  {:<16}  {path_str}{hint}", self.name)
     }
 }
 
-#[derive(Tabled)]
-pub struct CheckValue {
-    #[tabled(rename = "Filename")]
-    filename: &'static str,
-    #[tabled(rename = "Path")]
-    path: String,
-    #[tabled(rename = "Status")]
-    status: FileStatus,
-}
-
-fn check_config() -> CheckValue {
-    CheckValue {
-        filename: UserConfig::file_name(),
-        path: match UserConfig::get_path() {
-            Ok(p) => p.to_str().unwrap_or("path unknown").into(),
-            Err(_) => "path unknown".into(),
-        },
-        status: UserConfig::exists().into(),
+fn check_document<D: Document>() -> FileCheck {
+    let path = D::get_path().ok();
+    let exists = path.as_ref().map(|p| p.exists()).unwrap_or(false);
+    FileCheck {
+        name: D::file_name(),
+        path,
+        exists,
     }
 }
 
-fn check_profile() -> CheckValue {
-    CheckValue {
-        filename: Profile::file_name(),
-        path: match Profile::get_path() {
-            Ok(p) => p.to_str().unwrap_or("path unknown").into(),
-            Err(_) => "path unknown".into(),
-        },
-        status: Profile::exists().into(),
+fn check_template<T: RenderableTemplate>() -> FileCheck {
+    let path = T::get_path().ok();
+    let exists = path.as_ref().map(|p| p.exists()).unwrap_or(false);
+    FileCheck {
+        name: T::file_name(),
+        path,
+        exists,
     }
 }
 
-fn check_plaintext_template() -> CheckValue {
-    CheckValue {
-        filename: PlaintextTemplate::file_name(),
-        path: match PlaintextTemplate::get_path() {
-            Ok(p) => p.to_str().unwrap_or("path unknown").into(),
-            Err(_) => "path unknown".into(),
-        },
-        status: PlaintextTemplate::exists().into(),
-    }
-}
-
-pub fn check() -> Vec<CheckValue> {
-    vec![check_config(), check_profile(), check_plaintext_template()]
-}
-
-pub fn check_as_table() -> String {
-    super::to_table(check(), 3)
+pub fn check() -> Vec<FileCheck> {
+    vec![
+        check_document::<UserConfig>(),
+        check_document::<Profile>(),
+        check_template::<PlaintextTemplate>(),
+    ]
 }

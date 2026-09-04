@@ -58,7 +58,8 @@ pub enum Commands {
     #[command(subcommand, about = "List available presets or bullets")]
     List(ListCommand),
 
-    #[command(about = "Get file status")]
+    /// Display filesystem paths and existence status for project files.
+    #[command(about = "Display project file paths and status")]
     Status,
 }
 
