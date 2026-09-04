@@ -71,3 +71,104 @@ const DEFAULT_TEMPLATE: &str = r#"
 {%- endfor %}
 {% endfor %}
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        profile::{Education, Employment, Profile, ProfileLink},
+        template::cv::CvTemplateContext,
+    };
+
+    #[test]
+    fn test_cv_template_context_new() {
+        let profile = Profile::default();
+        let context = CvTemplateContext::new(profile.clone());
+        assert_eq!(context.profile, profile);
+
+        let from_context: CvTemplateContext = profile.clone().into();
+        assert_eq!(from_context.profile, profile);
+    }
+
+    #[test]
+    fn test_plaintext_cv_template_render_full() {
+        let profile = Profile::default();
+        let context = CvTemplateContext::from(profile.clone());
+
+        let rendered =
+            PlaintextCvTemplate::render(&context).expect("cv template rendering should succeed");
+
+        assert!(rendered.contains(&profile.name));
+        assert!(rendered.contains(&profile.email));
+        assert!(rendered.contains(&profile.phone));
+        assert!(rendered.contains(&profile.location));
+        assert!(rendered.contains("Website:"));
+        assert!(rendered.contains("GitHub:"));
+
+        assert!(rendered.contains("--- Education ---"));
+        assert!(rendered.contains("--- Employment ---"));
+        assert!(rendered.contains("--- Projects ---"));
+        assert!(rendered.contains("--- Professional Service ---"));
+
+        for edu in &profile.education {
+            assert!(rendered.contains(&edu.degree));
+            assert!(rendered.contains(&edu.school));
+        }
+
+        for emp in &profile.employment {
+            assert!(rendered.contains(&emp.title));
+            assert!(rendered.contains(&emp.employer));
+        }
+    }
+
+    #[test]
+    fn test_plaintext_cv_template_render_minimal() {
+        let minimal_profile = Profile {
+            name: "Alex Smith".into(),
+            email: "alex@example.com".into(),
+            phone: "123-456-7890".into(),
+            location: "Remote".into(),
+            website: None,
+            github: Some(ProfileLink::new("alex", "https://github.com/alex")),
+            education: vec![Education {
+                degree: "B.S. Math".into(),
+                school: "State College".into(),
+                start_date: "2020-09".into(),
+                end_date: None,
+                gpa: None,
+                coursework: Vec::new(),
+            }],
+            employment: vec![Employment {
+                title: "Software Engineer".into(),
+                employer: "Tech Co".into(),
+                location: "Remote".into(),
+                start_date: "2022-01".into(),
+                end_date: None,
+                bullets: vec!["Shipped features.".into()],
+            }],
+            professional_service: Vec::new(),
+            projects: Vec::new(),
+        };
+
+        let context = CvTemplateContext::from(minimal_profile);
+        let rendered = PlaintextCvTemplate::render(&context)
+            .expect("minimal cv template rendering should succeed");
+
+        assert!(rendered.contains("Alex Smith"));
+        assert!(rendered.contains("GitHub: https://github.com/alex"));
+        assert!(!rendered.contains("Website:"));
+        assert!(rendered.contains("Current"));
+        assert!(!rendered.contains("GPA:"));
+        assert!(!rendered.contains("Coursework:"));
+    }
+
+    #[test]
+    fn test_plaintext_cv_default_template_fallback() {
+        let fallback = PlaintextCvTemplate::get_default_template();
+        assert!(fallback.contains("{{ profile.name }}"));
+        assert!(fallback.contains("--- Education ---"));
+        assert!(fallback.contains("--- Employment ---"));
+        assert!(fallback.contains("--- Projects ---"));
+        assert!(fallback.contains("--- Professional Service ---"));
+    }
+}

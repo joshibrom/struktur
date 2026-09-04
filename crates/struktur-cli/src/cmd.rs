@@ -62,7 +62,8 @@ pub enum Commands {
     #[command(about = "Display project file paths and status")]
     Status,
 
-    #[command(subcommand)]
+    /// Manage and inspect the candidate master profile.
+    #[command(subcommand, about = "Manage and inspect user profile")]
     Profile(ProfileCommand),
 }
 
@@ -80,8 +81,10 @@ pub enum ListCommand {
     Presets,
 }
 
+/// Available profile subcommands.
 #[derive(Subcommand, Debug)]
 pub enum ProfileCommand {
-    #[command()]
+    /// Display a formatted summary of the candidate profile.
+    #[command(about = "Display formatted candidate profile summary")]
     Show,
 }

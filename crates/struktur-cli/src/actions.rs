@@ -88,6 +88,11 @@ pub fn get_status() -> ActionResult {
     Ok(())
 }
 
+/// Loads and displays the candidate profile in a formatted terminal view.
+///
+/// # Errors
+///
+/// Returns an error if the user profile cannot be loaded or rendered.
 pub fn show_profile() -> ActionResult {
     let profile = Profile::load()?;
 

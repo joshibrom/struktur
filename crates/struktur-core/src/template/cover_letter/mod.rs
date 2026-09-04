@@ -1,3 +1,5 @@
+//! Cover letter template rendering models and definitions.
+
 use serde::Serialize;
 use tera::Tera;
 
@@ -9,7 +11,7 @@ use crate::{
 
 pub mod plaintext;
 
-/// Context data passed into template engines for document rendering.
+/// Context data passed into template engines for cover letter document rendering.
 #[derive(Serialize, Debug, Clone)]
 pub struct CoverLetterTemplateContext {
     /// Target job role or position title (e.g. "Senior Backend Engineer").
@@ -31,7 +33,7 @@ pub struct CoverLetterTemplateContext {
 }
 
 impl CoverLetterTemplateContext {
-    /// Constructs and pre-renders a new `TemplateContext` from the given parameters.
+    /// Constructs and pre-renders a new `CoverLetterTemplateContext` from the given parameters.
     ///
     /// The preset's `opening_hook` and `closing_hook` template strings are evaluated
     /// and pre-rendered using the provided `role`, `company`, `date`, `profile`, and `bullets`.

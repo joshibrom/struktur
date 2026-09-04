@@ -31,13 +31,18 @@ pub enum TemplateError {
     TemplateContextSerializationError(tera::Error),
 }
 
+/// High-level document category defining template directory structure and semantic role.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TemplateArchetype {
+    /// Curriculum Vitae or comprehensive candidate resume.
     Cv,
+    /// Tailored job application cover letter.
     CoverLetter,
 }
 
 impl TemplateArchetype {
-    fn to_dirname(&self) -> &'static str {
+    /// Returns the filesystem directory name associated with this archetype.
+    fn to_dirname(self) -> &'static str {
         match self {
             Self::Cv => "cv",
             Self::CoverLetter => "cover-letter",
@@ -45,18 +50,20 @@ impl TemplateArchetype {
     }
 }
 
-/// A document template that can be rendered using a [`TemplateContext`].
+/// A document template that can be rendered using a serializable context.
 ///
-/// Implementations define a file name and an embedded default fallback template.
+/// Implementations define a file name, document archetype, and an embedded default fallback template.
 /// When rendering, the implementation first checks for a user-customized template
-/// file on disk (in `~/.config/struktur/templates/<file_name>`), falling back to
+/// file on disk (in `~/.config/struktur/templates/<archetype>/<file_name>`), falling back to
 /// the embedded default if no custom template exists.
 pub trait RenderableTemplate {
+    /// The input context type serialized and passed into the Tera template engine.
     type BaseContext: Serialize;
 
     /// The template file name on disk (e.g. `plaintext.tera`).
     fn file_name() -> &'static str;
 
+    /// The archetype category that groups this template on disk.
     fn get_archetype() -> TemplateArchetype;
 
     /// The embedded default template used when no user file exists on disk.
@@ -116,7 +123,7 @@ pub trait RenderableTemplate {
         }
     }
 
-    /// Renders the template using the provided [`TemplateContext`].
+    /// Renders the template using the provided context.
     ///
     /// # Errors
     ///
