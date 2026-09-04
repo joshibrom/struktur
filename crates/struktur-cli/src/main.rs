@@ -2,7 +2,7 @@
 
 use clap::Parser;
 
-use crate::cmd::{Cli, Commands, ListCommand};
+use crate::cmd::{Cli, Commands, ListCommand, ProfileCommand};
 
 mod actions;
 mod cmd;
@@ -35,6 +35,9 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         Commands::List(lc) => match lc {
             ListCommand::Presets => actions::list_presets(),
             ListCommand::Bullets { tag } => actions::list_bullets(tag),
+        },
+        Commands::Profile(pc) => match pc {
+            ProfileCommand::Show => actions::show_profile(),
         },
     }
 }

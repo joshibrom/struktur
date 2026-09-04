@@ -84,3 +84,13 @@ pub fn get_status() -> ActionResult {
 
     Ok(())
 }
+
+pub fn show_profile() -> ActionResult {
+    let profile = Profile::load()?;
+    let config = UserConfig::load()?;
+
+    let cv = inspection::profile::show_profile(profile, &config);
+    println!("{cv}");
+
+    Ok(())
+}

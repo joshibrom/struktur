@@ -61,6 +61,9 @@ pub enum Commands {
     /// Display filesystem paths and existence status for project files.
     #[command(about = "Display project file paths and status")]
     Status,
+
+    #[command(subcommand)]
+    Profile(ProfileCommand),
 }
 
 #[derive(Subcommand, Debug)]
@@ -75,4 +78,10 @@ pub enum ListCommand {
     /// List all configured role presets in a table
     #[command(about = "List all configured role presets")]
     Presets,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ProfileCommand {
+    #[command()]
+    Show,
 }

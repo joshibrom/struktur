@@ -13,6 +13,7 @@ use crate::{
     profile::Profile,
 };
 
+pub mod cv;
 pub mod plaintext;
 
 /// Context data passed into template engines for document rendering.
@@ -133,6 +134,20 @@ pub enum TemplateError {
     TemplateContextSerializationError(tera::Error),
 }
 
+pub enum TemplateArchetype {
+    Cv,
+    CoverLetter,
+}
+
+impl TemplateArchetype {
+    fn to_dirname(&self) -> &'static str {
+        match self {
+            Self::Cv => "cv",
+            Self::CoverLetter => "cover-letter",
+        }
+    }
+}
+
 /// A document template that can be rendered using a [`TemplateContext`].
 ///
 /// Implementations define a file name and an embedded default fallback template.
@@ -142,6 +157,8 @@ pub enum TemplateError {
 pub trait RenderableTemplate {
     /// The template file name on disk (e.g. `plaintext.tera`).
     fn file_name() -> &'static str;
+
+    fn get_archetype() -> TemplateArchetype;
 
     /// The embedded default template used when no user file exists on disk.
     fn get_default_template() -> &'static str;
@@ -161,7 +178,10 @@ pub trait RenderableTemplate {
             })?
             .config_dir()
             .to_owned();
-        Ok(path.join("templates").join(Self::file_name()))
+        Ok(path
+            .join("templates")
+            .join(Self::get_archetype().to_dirname())
+            .join(Self::file_name()))
     }
 
     /// Checks whether the custom template file exists on disk.

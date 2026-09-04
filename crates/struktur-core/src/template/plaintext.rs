@@ -13,6 +13,10 @@ impl RenderableTemplate for PlaintextTemplate {
         "plaintext.tera"
     }
 
+    fn get_archetype() -> super::TemplateArchetype {
+        super::TemplateArchetype::CoverLetter
+    }
+
     fn get_default_template() -> &'static str {
         DEFAULT_TEMPLATE.trim()
     }

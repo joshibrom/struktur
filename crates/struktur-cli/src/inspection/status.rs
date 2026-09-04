@@ -6,7 +6,9 @@ use struktur_core::{
     config::UserConfig,
     profile::Profile,
     storage::document::Document,
-    template::{RenderableTemplate, plaintext::PlaintextTemplate},
+    template::{
+        RenderableTemplate, cv::plaintext::PlaintextCvTemplate, plaintext::PlaintextTemplate,
+    },
 };
 
 /// Health and existence check for a single project file.
@@ -58,5 +60,6 @@ pub fn check() -> Vec<FileCheck> {
         check_document::<UserConfig>(),
         check_document::<Profile>(),
         check_template::<PlaintextTemplate>(),
+        check_template::<PlaintextCvTemplate>(),
     ]
 }

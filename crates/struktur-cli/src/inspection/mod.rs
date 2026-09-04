@@ -4,6 +4,7 @@ use tabled::{
 };
 
 pub mod listing;
+pub mod profile;
 pub mod status;
 
 fn get_term_width() -> usize {
