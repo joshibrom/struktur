@@ -1,13 +1,13 @@
 //! CV and Resume template rendering models and definitions.
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::profile::Profile;
 
 pub mod plaintext;
 
 /// Context data passed into template engines for rendering CV / Resume documents.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct CvTemplateContext {
     /// Master candidate profile containing contact info, education, and experience.
     pub profile: Profile,
@@ -23,5 +23,20 @@ impl CvTemplateContext {
 impl From<Profile> for CvTemplateContext {
     fn from(profile: Profile) -> Self {
         Self::new(profile)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cv_template_context_new() {
+        let profile = Profile::default();
+        let context = CvTemplateContext::new(profile.clone());
+        assert_eq!(context.profile, profile);
+
+        let from_context: CvTemplateContext = profile.clone().into();
+        assert_eq!(from_context.profile, profile);
     }
 }

@@ -81,16 +81,6 @@ mod tests {
     };
 
     #[test]
-    fn test_cv_template_context_new() {
-        let profile = Profile::default();
-        let context = CvTemplateContext::new(profile.clone());
-        assert_eq!(context.profile, profile);
-
-        let from_context: CvTemplateContext = profile.clone().into();
-        assert_eq!(from_context.profile, profile);
-    }
-
-    #[test]
     fn test_plaintext_cv_template_render_full() {
         let profile = Profile::default();
         let context = CvTemplateContext::from(profile.clone());

@@ -47,3 +47,51 @@ Key Highlights:
 Sincerely,
 {{ profile.name }}
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        config::UserConfig,
+        profile::Profile,
+        template::cover_letter::CoverLetterTemplateContext,
+    };
+
+    #[test]
+    fn test_plaintext_template_render() {
+        let profile = Profile::default();
+        let config = UserConfig::default();
+        let preset = config.presets.get("backend").expect("preset should exist");
+
+        let context = CoverLetterTemplateContext::new(
+            "Staff Backend Engineer".into(),
+            "Stripe".into(),
+            "August 29, 2026".into(),
+            profile.clone(),
+            preset,
+            &config,
+        )
+        .expect("context creation should succeed");
+
+        let rendered = PlaintextTemplate::render(&context).expect("rendering should succeed");
+
+        assert!(rendered.contains(&profile.name));
+        assert!(rendered.contains(&profile.email));
+        assert!(rendered.contains("August 29, 2026"));
+        assert!(rendered.contains("Regarding: Staff Backend Engineer Position"));
+        assert!(rendered.contains("Stripe"));
+        assert!(rendered.contains("Key Highlights:"));
+
+        for bullet in &context.bullets {
+            assert!(rendered.contains(&bullet.text));
+        }
+    }
+
+    #[test]
+    fn test_default_template_fallback() {
+        let fallback = PlaintextTemplate::get_default_template();
+        assert!(fallback.contains("{{ profile.name }}"));
+        assert!(fallback.contains("{{ opening_hook }}"));
+        assert!(fallback.contains("{{ closing_hook }}"));
+    }
+}

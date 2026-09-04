@@ -108,3 +108,40 @@ impl CoverLetterTemplateContext {
             .map_err(TemplateError::TemplateRenderError)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cover_letter_context_new_and_prerender() {
+        let profile = Profile::default();
+        let config = UserConfig::default();
+        let preset = config.presets.get("backend").expect("preset should exist");
+
+        let context = CoverLetterTemplateContext::new(
+            "Principal Engineer".into(),
+            "Acme Corp".into(),
+            "2026-08-29".into(),
+            profile.clone(),
+            preset,
+            &config,
+        )
+        .expect("context creation should succeed");
+
+        assert_eq!(context.role, "Principal Engineer");
+        assert_eq!(context.company, "Acme Corp");
+        assert_eq!(context.date, "2026-08-29");
+        assert_eq!(context.profile.name, profile.name);
+        assert!(!context.bullets.is_empty());
+
+        // Verify pre-rendered hooks replaced variables
+        assert!(context.opening_hook.contains("Principal Engineer"));
+        assert!(context.opening_hook.contains("Acme Corp"));
+        assert!(!context.opening_hook.contains("{{ role }}"));
+        assert!(!context.opening_hook.contains("{{ company }}"));
+
+        assert!(context.closing_hook.contains("Acme Corp"));
+        assert!(!context.closing_hook.contains("{{ company }}"));
+    }
+}
