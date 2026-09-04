@@ -13,8 +13,8 @@ use crate::{
     profile::Profile,
 };
 
+pub mod cover_letter;
 pub mod cv;
-pub mod plaintext;
 
 /// Context data passed into template engines for document rendering.
 #[derive(Serialize, Debug, Clone)]
@@ -264,7 +264,7 @@ pub trait RenderableTemplate {
 
 #[cfg(test)]
 mod tests {
-    use super::{plaintext::PlaintextTemplate, *};
+    use super::{cover_letter::plaintext::PlaintextTemplate, *};
 
     #[test]
     fn test_template_context_new_and_prerender() {

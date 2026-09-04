@@ -5,7 +5,7 @@ use struktur_core::{
     config::UserConfig,
     profile::Profile,
     storage::document::Document,
-    template::{RenderableTemplate, TemplateContext, plaintext::PlaintextTemplate},
+    template::{RenderableTemplate, TemplateContext, cover_letter::plaintext::PlaintextTemplate},
 };
 
 use crate::{

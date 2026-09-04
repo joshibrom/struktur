@@ -7,7 +7,8 @@ use struktur_core::{
     profile::Profile,
     storage::document::Document,
     template::{
-        RenderableTemplate, cv::plaintext::PlaintextCvTemplate, plaintext::PlaintextTemplate,
+        RenderableTemplate, cover_letter::plaintext::PlaintextTemplate,
+        cv::plaintext::PlaintextCvTemplate,
     },
 };
 

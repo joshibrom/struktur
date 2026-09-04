@@ -11,8 +11,8 @@ use crate::{
     config::UserConfig,
     profile::Profile,
     template::{
-        RenderableTemplate, TemplateError, cv::plaintext::PlaintextCvTemplate,
-        plaintext::PlaintextTemplate,
+        RenderableTemplate, TemplateError, cover_letter::plaintext::PlaintextTemplate,
+        cv::plaintext::PlaintextCvTemplate,
     },
 };
 
