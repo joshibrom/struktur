@@ -10,7 +10,7 @@ use struktur_core::{
 
 use crate::{
     helpers::{OutputContentType, OutputPath},
-    listing,
+    inspection,
 };
 
 pub type ActionResult = AnyResult<()>;
@@ -57,7 +57,7 @@ pub fn generate(
 pub fn list_presets() -> ActionResult {
     let config = UserConfig::load()?;
 
-    let table = listing::presets::list_presets_as_table(&config);
+    let table = inspection::listing::presets::list_presets_as_table(&config);
 
     println!("{table}");
 
@@ -67,7 +67,7 @@ pub fn list_presets() -> ActionResult {
 pub fn list_bullets(tag_filter: &Option<String>) -> ActionResult {
     let config = UserConfig::load()?;
 
-    let table = listing::bullets::list_bullets_as_table(&config, tag_filter.to_owned());
+    let table = inspection::listing::bullets::list_bullets_as_table(&config, tag_filter.to_owned());
 
     println!("{table}");
 

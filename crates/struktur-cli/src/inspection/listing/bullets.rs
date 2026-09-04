@@ -40,4 +40,3 @@ pub fn list_bullets_as_table(config: &UserConfig, tag_filter: Option<String>) ->
 
     to_table(rows, 3)
 }
-

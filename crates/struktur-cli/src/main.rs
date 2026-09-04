@@ -7,7 +7,7 @@ use crate::cmd::{Cli, Commands, ListCommand};
 mod actions;
 mod cmd;
 mod helpers;
-mod listing;
+mod inspection;
 
 /// Dispatches parsed CLI commands to their respective action handlers.
 ///
