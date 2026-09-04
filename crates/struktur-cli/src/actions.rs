@@ -63,3 +63,13 @@ pub fn list_presets() -> ActionResult {
 
     Ok(())
 }
+
+pub fn list_bullets(tag_filter: &Option<String>) -> ActionResult {
+    let config = UserConfig::load()?;
+
+    let table = listing::bullets::list_bullets_as_table(&config, tag_filter.to_owned());
+
+    println!("{table}");
+
+    Ok(())
+}

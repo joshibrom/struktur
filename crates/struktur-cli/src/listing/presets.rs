@@ -1,8 +1,6 @@
-use tabled::{
-    Table, Tabled,
-    settings::{Modify, Style, Width, object::Segment},
-};
+use tabled::Tabled;
 
+use super::{StringList, to_table};
 use struktur_core::config::{ConfigIdT, Preset, UserConfig};
 
 #[derive(Tabled)]
@@ -47,27 +45,5 @@ pub fn list_presets_as_table(config: &UserConfig) -> String {
         .collect::<Vec<PresetTableRow>>();
     rows.sort_by(|a, b| a.id.cmp(&b.id));
 
-    let cell_max_width = (super::get_term_width() as f32 / 6.0).ceil() as usize;
-
-    Table::new(rows)
-        .with(Style::modern_rounded())
-        .with(Modify::new(Segment::all()).with(Width::wrap(cell_max_width).keep_words(true)))
-        .to_string()
-}
-
-struct StringList(Vec<String>);
-
-impl From<Vec<String>> for StringList {
-    fn from(value: Vec<String>) -> Self {
-        Self(value)
-    }
-}
-
-impl std::fmt::Display for StringList {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for s in self.0.iter() {
-            writeln!(f, "- {s}")?;
-        }
-        Ok(())
-    }
+    to_table(rows, 6)
 }

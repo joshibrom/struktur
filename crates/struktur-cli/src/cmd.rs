@@ -61,6 +61,13 @@ pub enum Commands {
 
 #[derive(Subcommand, Debug)]
 pub enum ListCommand {
+    /// List all configured bullets in a table
+    #[command(about = "List all configured bullets")]
+    Bullets {
+        /// Optionally filter bullets by a tag name
+        #[arg(short, long, help = "Filter by bullets with given tag")]
+        tag: Option<String>,
+    },
     /// List all configured role presets in a table
     #[command(about = "List all configured role presets")]
     Presets,

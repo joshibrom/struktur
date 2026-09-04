@@ -33,6 +33,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         ),
         Commands::List(lc) => match lc {
             ListCommand::Presets => actions::list_presets(),
+            ListCommand::Bullets { tag } => actions::list_bullets(tag),
         },
     }
 }
