@@ -32,10 +32,7 @@ pub fn list_bullets_as_table(config: &UserConfig, tag_filter: Option<String>) ->
     rows.sort_by(|a, b| a.id.cmp(&b.id));
 
     if let Some(tag) = tag_filter {
-        rows = rows
-            .into_iter()
-            .filter(|row| row.tags.0.contains(&tag.trim().to_string()))
-            .collect();
+        rows.retain(|row| row.tags.0.contains(&tag.trim().to_string()));
     }
 
     to_table(rows, 3)

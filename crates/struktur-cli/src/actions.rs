@@ -73,3 +73,11 @@ pub fn list_bullets(tag_filter: &Option<String>) -> ActionResult {
 
     Ok(())
 }
+
+pub fn get_status() -> ActionResult {
+    let table = inspection::status::check_as_table();
+
+    println!("{table}");
+
+    Ok(())
+}

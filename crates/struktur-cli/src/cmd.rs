@@ -57,6 +57,9 @@ pub enum Commands {
     /// List configured resources (presets, bullets, etc.)
     #[command(subcommand, about = "List available presets or bullets")]
     List(ListCommand),
+
+    #[command(about = "Get file status")]
+    Status,
 }
 
 #[derive(Subcommand, Debug)]
