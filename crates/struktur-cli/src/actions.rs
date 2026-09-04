@@ -5,7 +5,10 @@ use struktur_core::{
     config::UserConfig,
     profile::Profile,
     storage::document::Document,
-    template::{RenderableTemplate, TemplateContext, cover_letter::plaintext::PlaintextTemplate},
+    template::{
+        RenderableTemplate,
+        cover_letter::{CoverLetterTemplateContext, plaintext::PlaintextTemplate},
+    },
 };
 
 use crate::{
@@ -47,7 +50,7 @@ pub fn generate(
         .get(&preset_name)
         .ok_or(anyhow::anyhow!("Unknown preset: {preset_name}"))?;
 
-    let context = TemplateContext::new(role, company, date, profile, preset, &config)?;
+    let context = CoverLetterTemplateContext::new(role, company, date, profile, preset, &config)?;
 
     let content = PlaintextTemplate::render(&context)?;
 
@@ -87,9 +90,8 @@ pub fn get_status() -> ActionResult {
 
 pub fn show_profile() -> ActionResult {
     let profile = Profile::load()?;
-    let config = UserConfig::load()?;
 
-    let cv = inspection::profile::show_profile(profile, &config);
+    let cv = inspection::profile::show_profile(profile)?;
     println!("{cv}");
 
     Ok(())

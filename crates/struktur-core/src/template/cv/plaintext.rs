@@ -9,6 +9,8 @@ use crate::template::{RenderableTemplate, TemplateArchetype};
 pub struct PlaintextCvTemplate;
 
 impl RenderableTemplate for PlaintextCvTemplate {
+    type BaseContext = super::CvTemplateContext;
+
     fn file_name() -> &'static str {
         "plaintext.tera"
     }

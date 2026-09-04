@@ -1,29 +1,12 @@
 use struktur_core::{
-    config::{Preset, UserConfig},
     profile::Profile,
-    template::{RenderableTemplate, TemplateContext, cv::plaintext::PlaintextCvTemplate},
+    template::{
+        RenderableTemplate, TemplateError,
+        cv::{CvTemplateContext, plaintext::PlaintextCvTemplate},
+    },
 };
 
-pub fn show_profile(profile: Profile, config: &UserConfig) -> String {
-    let preset = Preset {
-        id: String::new(),
-        title: String::new(),
-        description: String::new(),
-        default_tone: String::new(),
-        opening_hook: String::new(),
-        closing_hook: String::new(),
-        default_bullets: Vec::new(),
-        additional_archetypes: Vec::new(),
-    };
-    let ctx = TemplateContext::new(
-        String::new(),
-        String::new(),
-        String::new(),
-        profile,
-        &preset,
-        config,
-    )
-    .expect("empty strings should pre-render");
-
-    PlaintextCvTemplate::render(&ctx).expect("template should render")
+pub fn show_profile(profile: Profile) -> Result<String, TemplateError> {
+    let ctx = CvTemplateContext::new(profile);
+    PlaintextCvTemplate::render(&ctx)
 }

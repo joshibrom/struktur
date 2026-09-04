@@ -9,6 +9,8 @@ use crate::template::{RenderableTemplate, TemplateArchetype};
 pub struct PlaintextTemplate;
 
 impl RenderableTemplate for PlaintextTemplate {
+    type BaseContext = super::CoverLetterTemplateContext;
+
     fn file_name() -> &'static str {
         "plaintext.tera"
     }
