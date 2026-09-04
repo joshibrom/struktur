@@ -950,6 +950,7 @@ dependencies = [
  "anyhow",
  "clap",
  "cli-clipboard",
+ "serde_json",
  "struktur-core",
  "tabled",
  "terminal_size",

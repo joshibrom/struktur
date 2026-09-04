@@ -86,5 +86,8 @@ pub enum ListCommand {
 pub enum ProfileCommand {
     /// Display a formatted summary of the candidate profile.
     #[command(about = "Display formatted candidate profile summary")]
-    Show,
+    Show {
+        #[arg(short, long, help = "Output profile information in JSON format")]
+        json: bool,
+    },
 }

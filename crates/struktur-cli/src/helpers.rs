@@ -19,12 +19,12 @@ impl OutputPath {
     /// Determines the output destination from parsed CLI flags.
     ///
     /// Precedence: `--output <path>` > `--clipboard` > `Terminal`.
-    pub fn from_cmd_args(output_path: &Option<PathBuf>, clipboard: &bool) -> Self {
+    pub fn from_cmd_args(output_path: Option<PathBuf>, clipboard: bool) -> Self {
         if let Some(path) = output_path {
-            return Self::File(path.to_owned());
+            return Self::File(path);
         }
 
-        if *clipboard {
+        if clipboard {
             Self::Clipboard
         } else {
             Self::Terminal

@@ -69,10 +69,10 @@ pub fn list_presets() -> ActionResult {
 }
 
 /// Lists all configured accomplishment bullets, optionally filtered by tag.
-pub fn list_bullets(tag_filter: &Option<String>) -> ActionResult {
+pub fn list_bullets(tag_filter: Option<String>) -> ActionResult {
     let config = UserConfig::load()?;
 
-    let table = inspection::listing::bullets::list_bullets_as_table(&config, tag_filter.to_owned());
+    let table = inspection::listing::bullets::list_bullets_as_table(&config, tag_filter);
 
     println!("{table}");
 
@@ -93,11 +93,15 @@ pub fn get_status() -> ActionResult {
 /// # Errors
 ///
 /// Returns an error if the user profile cannot be loaded or rendered.
-pub fn show_profile() -> ActionResult {
+pub fn show_profile(as_json: bool) -> ActionResult {
     let profile = Profile::load()?;
 
-    let cv = inspection::profile::show_profile(profile)?;
-    println!("{cv}");
+    let output = if as_json {
+        serde_json::to_string_pretty(&profile)?
+    } else {
+        inspection::profile::show_profile(profile)?
+    };
+    println!("{output}");
 
     Ok(())
 }

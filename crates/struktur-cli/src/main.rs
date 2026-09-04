@@ -15,7 +15,7 @@ mod inspection;
 ///
 /// Returns an error if the executed command action fails.
 pub fn run(cli: Cli) -> anyhow::Result<()> {
-    match &cli.command {
+    match cli.command {
         Commands::Init => actions::init(),
         Commands::Generate {
             preset,
@@ -25,10 +25,10 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
             output,
             clipboard,
         } => actions::generate(
-            preset.clone(),
-            company.clone(),
-            role.clone(),
-            date.clone().unwrap_or(helpers::today_as_string()),
+            preset,
+            company,
+            role,
+            date.unwrap_or(helpers::today_as_string()),
             helpers::OutputPath::from_cmd_args(output, clipboard),
         ),
         Commands::Status => actions::get_status(),
@@ -37,7 +37,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
             ListCommand::Bullets { tag } => actions::list_bullets(tag),
         },
         Commands::Profile(pc) => match pc {
-            ProfileCommand::Show => actions::show_profile(),
+            ProfileCommand::Show { json } => actions::show_profile(json),
         },
     }
 }
