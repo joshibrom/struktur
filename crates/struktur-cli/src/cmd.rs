@@ -54,12 +54,14 @@ pub enum Commands {
         clipboard: bool,
     },
 
-    #[command(subcommand)]
+    /// List configured resources (presets, bullets, etc.)
+    #[command(subcommand, about = "List available presets or bullets")]
     List(ListCommand),
 }
 
 #[derive(Subcommand, Debug)]
 pub enum ListCommand {
-    #[command()]
+    /// List all configured role presets in a table
+    #[command(about = "List all configured role presets")]
     Presets,
 }
