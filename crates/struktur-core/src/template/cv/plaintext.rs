@@ -22,48 +22,50 @@ impl RenderableTemplate for PlaintextCvTemplate {
     }
 }
 
-/// The embedded default Tera template for plaintext cover letters.
+/// The embedded default Tera template for plaintext CVs and resumes.
 const DEFAULT_TEMPLATE: &str = r#"
 {{ profile.name }}
 {{ profile.email }} | {{ profile.phone }} | {{ profile.location }}
-{% if profile.website %}Website: {{ profile.website.href }}{% endif %} | {% if profile.github %}GitHub: {{ profile.github.href }}{% endif %}
+{% if profile.website %}Website: {{ profile.website.href }}{% endif %}{% if profile.website and profile.github %} | {% endif %}{% if profile.github %}GitHub: {{ profile.github.href }}{% endif %}
 
 --- Education ------------------------------------------------------------------
 {% for edu in profile.education %}
-{{ edu.degree }} {% if edu.gpa %}{{ edu.gpa }}{% endif %}
+{{ edu.degree }}{% if edu.gpa %} (GPA: {{ edu.gpa }}){% endif %}
 {{ edu.school }} | {{ edu.start_date }} -- {% if edu.end_date %}{{ edu.end_date }}{% else %}Current{% endif %}
-{% if edu.coursework %}
+{%- if edu.coursework %}
     Coursework:
-    {% for cw in edu.coursework %}
-        - {{cw}}
-    {% endfor %}
-{% endif %}
+{%- for cw in edu.coursework %}
+        - {{ cw }}
+{%- endfor %}
+{%- endif %}
 {% endfor %}
 
 --- Employment -----------------------------------------------------------------
 {% for emp in profile.employment %}
 {{ emp.title }} @ {{ emp.employer }} ({{ emp.location }})
 {{ emp.start_date }} -- {% if emp.end_date %}{{ emp.end_date }}{% else %}Current{% endif %}
-{% for bul in emp.bullets %}
+{%- for bul in emp.bullets %}
     - {{ bul }}
-{% endfor %}
+{%- endfor %}
 {% endfor %}
 
 --- Projects -------------------------------------------------------------------
 {% for proj in profile.projects %}
 {{ proj.title }} [{{ proj.category }}] ({{ proj.stack | join(sep=", ") }})
-{% if proj.date %}{{ proj.date }}{% endif %}
-{% for bul in proj.bullets %}
+{%- if proj.date %}
+{{ proj.date }}
+{%- endif %}
+{%- for bul in proj.bullets %}
     - {{ bul }}
-{% endfor %}
+{%- endfor %}
 {% endfor %}
 
 --- Professional Service -------------------------------------------------------
 {% for serv in profile.professional_service %}
 {{ serv.title }} @ {{ serv.organization }}
 {{ serv.start_date }} -- {% if serv.end_date %}{{ serv.end_date }}{% else %}Current{% endif %}
-{% for bul in serv.bullets %}
+{%- for bul in serv.bullets %}
     - {{ bul }}
-{% endfor %}
+{%- endfor %}
 {% endfor %}
 "#;
