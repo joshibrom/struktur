@@ -112,14 +112,7 @@ pub fn show_profile(as_json: bool) -> ActionResult {
 ///
 /// Returns an error if the configuration path cannot be resolved or the editor fails to launch.
 pub fn edit_config() -> ActionResult {
-    let config_path = UserConfig::get_path()?;
-    let code = open_file_in_editor(&config_path)?;
-
-    if code != 0 {
-        eprintln!("Warning: Non-Zero exit code received: {code}");
-    }
-
-    Ok(())
+    edit_document::<UserConfig>()
 }
 
 /// Opens `profile.toml` in the user's default text editor.
@@ -128,12 +121,15 @@ pub fn edit_config() -> ActionResult {
 ///
 /// Returns an error if the profile path cannot be resolved or the editor fails to launch.
 pub fn edit_profile() -> ActionResult {
-    let profile_path = Profile::get_path()?;
-    let code = open_file_in_editor(&profile_path)?;
+    edit_document::<Profile>()
+}
 
-    if code != 0 {
-        eprintln!("Warning: Non-Zero exit code received: {code}");
-    }
+fn edit_document<D: Document>() -> ActionResult {
+    let path = D::get_path()?;
+    Ok(open_file_in_editor(&path)?)
+}
 
-    Ok(())
+fn edit_template<T: RenderableTemplate>() -> ActionResult {
+    let path = T::get_path()?;
+    Ok(open_file_in_editor(&path)?)
 }

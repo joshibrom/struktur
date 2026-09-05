@@ -137,7 +137,7 @@ pub fn get_editor() -> (String, Vec<String>) {
 /// # Errors
 ///
 /// Returns an [`std::io::Error`] if directory creation or editor process spawning fails.
-pub fn open_file_in_editor(file_path: &Path) -> std::io::Result<i32> {
+pub fn open_file_in_editor(file_path: &Path) -> std::io::Result<()> {
     let (editor, args) = get_editor();
 
     if let Some(parent) = file_path.parent()
@@ -152,7 +152,15 @@ pub fn open_file_in_editor(file_path: &Path) -> std::io::Result<i32> {
         .arg(file_path)
         .status()?;
 
-    Ok(status.code().unwrap_or(1))
+    if !status.success() {
+        let code_str = status
+            .code()
+            .map(|c| c.to_string())
+            .unwrap_or_else(|| "terminated by signal".into());
+        eprintln!("Warning: Editor exited with non-zero status ({code_str})");
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
