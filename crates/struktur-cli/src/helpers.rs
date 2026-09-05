@@ -1,8 +1,17 @@
 //! Utility functions, output routing, and date helpers for the CLI.
 
-use std::{io::Write, path::PathBuf};
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Result as AnyResult;
+
+#[cfg(windows)]
+const DEFAULT_EDITOR: &str = "notepad";
+
+#[cfg(not(windows))]
+const DEFAULT_EDITOR: &str = "vi";
 
 /// Destination target for rendered application materials.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -103,4 +112,56 @@ pub fn today_as_string() -> String {
     let format = time::format_description::parse_borrowed::<3>("[day] [month repr:long] [year]")
         .expect("static date format string should be valid");
     today.format(&format).unwrap_or_else(|_| today.to_string())
+}
+
+/// Resolves the user's preferred text editor and any configured command-line flags.
+///
+/// Precedence: `$VISUAL` -> `$EDITOR` -> platform default (`vi` on Unix, `notepad` on Windows).
+/// Returns a tuple containing the editor binary name and any space-separated flag arguments.
+pub fn get_editor() -> (String, Vec<String>) {
+    let env_editor = std::env::var("VISUAL")
+        .or_else(|_| std::env::var("EDITOR"))
+        .unwrap_or_else(|_| DEFAULT_EDITOR.to_string());
+    let mut parts = env_editor.split_whitespace();
+    let editor = parts.next().unwrap_or(DEFAULT_EDITOR).to_string();
+    let args = parts.map(String::from).collect();
+
+    (editor, args)
+}
+
+/// Launches the user's default text editor targeting the specified file path.
+///
+/// If the file's parent directory does not exist, it is created automatically with an informational notice.
+/// Inherits standard I/O to support interactive terminal editing.
+///
+/// # Errors
+///
+/// Returns an [`std::io::Error`] if directory creation or editor process spawning fails.
+pub fn open_file_in_editor(file_path: &Path) -> std::io::Result<i32> {
+    let (editor, args) = get_editor();
+
+    if let Some(parent) = file_path.parent()
+        && !parent.exists()
+    {
+        eprintln!("Notice: Created directory '{}'", parent.display());
+        std::fs::create_dir_all(parent)?;
+    }
+
+    let status = std::process::Command::new(editor)
+        .args(args)
+        .arg(file_path)
+        .status()?;
+
+    Ok(status.code().unwrap_or(1))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_editor_returns_valid_binary() {
+        let (editor, _) = get_editor();
+        assert!(!editor.is_empty());
+    }
 }

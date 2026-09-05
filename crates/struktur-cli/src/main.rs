@@ -2,7 +2,7 @@
 
 use clap::Parser;
 
-use crate::cmd::{Cli, Commands, ListCommand, ProfileCommand};
+use crate::cmd::{Cli, Commands, EditCommand, ListCommand, ProfileCommand};
 
 mod actions;
 mod cmd;
@@ -38,6 +38,10 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         },
         Commands::Profile(pc) => match pc {
             ProfileCommand::Show { json } => actions::show_profile(json),
+        },
+        Commands::Edit(ec) => match ec {
+            EditCommand::Config => actions::edit_config(),
+            EditCommand::Profile => actions::edit_profile(),
         },
     }
 }

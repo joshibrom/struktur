@@ -65,6 +65,10 @@ pub enum Commands {
     /// Manage and inspect the candidate master profile.
     #[command(subcommand, about = "Manage and inspect user profile")]
     Profile(ProfileCommand),
+
+    /// Open project configuration and profile files in an editor.
+    #[command(subcommand, about = "Open project configuration or profile in $EDITOR")]
+    Edit(EditCommand),
 }
 
 #[derive(Subcommand, Debug)]
@@ -87,7 +91,20 @@ pub enum ProfileCommand {
     /// Display a formatted summary of the candidate profile.
     #[command(about = "Display formatted candidate profile summary")]
     Show {
+        /// Output profile information in JSON format
         #[arg(short, long, help = "Output profile information in JSON format")]
         json: bool,
     },
+}
+
+/// Available edit subcommands specifying which file to open in an editor.
+#[derive(Subcommand, Debug)]
+pub enum EditCommand {
+    /// Open config.toml in your default editor.
+    #[command(about = "Open config.toml in your default editor")]
+    Config,
+
+    /// Open profile.toml in your default editor.
+    #[command(about = "Open profile.toml in your default editor")]
+    Profile,
 }
