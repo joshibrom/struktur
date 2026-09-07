@@ -55,14 +55,14 @@ This roadmap outlines the phased development plan for `struktur`, tracking compl
 
 ## Phase 3: CLI Inspection & Profile Management
 
-* [ ] **Inspection Subcommands**:
+* [x] **Inspection Subcommands**:
   * `struktur list presets`: Formatted table of available role presets and tone descriptions.
   * `struktur list bullets [--tag <name>]`: Table of reusable bullet points with tag filtering.
   * `struktur profile show`: Human-readable summary of the current user profile.
   * `struktur status`: Path diagnostics showing active config, profile, and data file locations.
-* [ ] **Editor Integration**:
-  * `struktur edit [config|profile]`: Helper to open configuration files in the user's `$EDITOR`.
-* [ ] **Validation Subcommand**:
+* [x] **Editor Integration**:
+  * `struktur edit [config|profile|template]`: Helper to open configuration, profile, and template files in the user's `$EDITOR`.
+* [x] **Validation Subcommand**:
   * `struktur validate`: Checks existing configuration and profile files for syntax or reference errors.
 
 ---
