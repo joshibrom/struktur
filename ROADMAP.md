@@ -13,10 +13,10 @@ This roadmap outlines the phased development plan for `struktur`, tracking compl
 [ Phase 2: Template & Generation ]    ✅ Completed
              │
              ▼
-[ Phase 3: CLI Inspection & Mgmt ]    🔄 Next Milestone
+[ Phase 3: CLI Inspection & Mgmt ]    ✅ Completed
              │
              ▼
-[ Phase 4: SQLite Job Tracker ]       ⏳ Planned
+[ Phase 4: SQLite Job Tracker ]       🔄 Next Milestone
              │
              ▼
 [ Phase 5: Typst PDF Generation ]     ⏳ Planned
@@ -53,7 +53,7 @@ This roadmap outlines the phased development plan for `struktur`, tracking compl
 
 ---
 
-## Phase 3: CLI Inspection & Profile Management
+## Phase 3: CLI Inspection & Profile Management (Completed)
 
 * [x] **Inspection Subcommands**:
   * `struktur list presets`: Formatted table of available role presets and tone descriptions.
@@ -67,7 +67,7 @@ This roadmap outlines the phased development plan for `struktur`, tracking compl
 
 ---
 
-## Phase 4: Local Job Application Tracking (SQLite Integration)
+## Phase 4: Local Job Application Tracking (SQLite Integration) (In Progress)
 
 * [ ] **Database Schema**:
   * Define schema for job applications: `company`, `role`, `status` (Saved, Applied, Interviewing, Offer, Rejected), `date_applied`, `salary_range`, `job_url`, `notes`.
