@@ -32,6 +32,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
             helpers::OutputPath::from_cmd_args(output, clipboard),
         ),
         Commands::Status => actions::get_status(),
+        Commands::Validate => actions::validate(),
         Commands::List(lc) => match lc {
             ListCommand::Presets => actions::list_presets(),
             ListCommand::Bullets { tag } => actions::list_bullets(tag),

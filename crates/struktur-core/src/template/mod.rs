@@ -42,7 +42,7 @@ pub enum TemplateArchetype {
 
 impl TemplateArchetype {
     /// Returns the filesystem directory name associated with this archetype.
-    fn to_dirname(self) -> &'static str {
+    pub fn to_dirname(self) -> &'static str {
         match self {
             Self::Cv => "cv",
             Self::CoverLetter => "cover-letter",

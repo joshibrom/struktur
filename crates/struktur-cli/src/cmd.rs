@@ -62,6 +62,10 @@ pub enum Commands {
     #[command(about = "Display project file paths and status")]
     Status,
 
+    /// Validate configuration, profile, and template files for syntax or reference errors.
+    #[command(about = "Validate configuration, profile, and template files")]
+    Validate,
+
     /// Manage and inspect the candidate master profile.
     #[command(subcommand, about = "Manage and inspect user profile")]
     Profile(ProfileCommand),

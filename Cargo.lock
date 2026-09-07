@@ -953,6 +953,7 @@ dependencies = [
  "serde_json",
  "struktur-core",
  "tabled",
+ "tera",
  "terminal_size",
  "time",
  "tokio",

@@ -6,6 +6,7 @@ use tabled::{
 pub mod listing;
 pub mod profile;
 pub mod status;
+pub mod validate;
 
 fn get_term_width() -> usize {
     terminal_size::terminal_size()

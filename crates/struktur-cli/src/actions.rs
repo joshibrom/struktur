@@ -89,6 +89,26 @@ pub fn get_status() -> ActionResult {
     Ok(())
 }
 
+/// Validates the format, syntax, and references of configuration, profile, and template files.
+///
+/// # Errors
+///
+/// Returns an error if one or more project files fail validation.
+pub fn validate() -> ActionResult {
+    let checks = inspection::validate::check();
+    let has_errors = checks.iter().any(|check| !check.is_valid());
+
+    for check in &checks {
+        println!("{check}");
+    }
+
+    if has_errors {
+        anyhow::bail!("One or more project files failed validation.");
+    }
+
+    Ok(())
+}
+
 /// Loads and displays the candidate profile in a formatted terminal view.
 ///
 /// # Errors
