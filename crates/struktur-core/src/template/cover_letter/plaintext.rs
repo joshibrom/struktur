@@ -52,9 +52,7 @@ Sincerely,
 mod tests {
     use super::*;
     use crate::{
-        config::UserConfig,
-        profile::Profile,
-        template::cover_letter::CoverLetterTemplateContext,
+        config::UserConfig, profile::Profile, template::cover_letter::CoverLetterTemplateContext,
     };
 
     #[test]
