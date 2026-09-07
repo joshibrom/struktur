@@ -70,7 +70,34 @@ cargo run -p struktur-cli -- init
 Default files created:
 * **Configuration**: `~/.config/struktur/config.toml` (Presets, archetypes, bullet library)
 * **Profile**: `~/.local/share/struktur/profile.toml` (Work history, education, projects, contact links)
-* **Templates**: `~/.config/struktur/templates/plaintext.tera` (Customizable cover letter layout)
+* **Templates**: `~/.config/struktur/templates/cover-letter/plaintext.tera` and `~/.config/struktur/templates/cv/plaintext.tera`
+
+### Inspecting & Managing Application Data
+
+```bash
+# List configured role presets in a terminal table
+cargo run -p struktur-cli -- list presets
+
+# List modular accomplishment bullets (optionally filtered by tag)
+cargo run -p struktur-cli -- list bullets
+cargo run -p struktur-cli -- list bullets --tag backend
+
+# Display a formatted summary of the candidate profile (or raw JSON)
+cargo run -p struktur-cli -- profile show
+cargo run -p struktur-cli -- profile show --json
+
+# Check filesystem paths and file existence
+cargo run -p struktur-cli -- status
+
+# Open configuration, profile, or templates in your $EDITOR
+cargo run -p struktur-cli -- edit config
+cargo run -p struktur-cli -- edit profile
+cargo run -p struktur-cli -- edit template cover-letter
+cargo run -p struktur-cli -- edit template cv
+
+# Validate configuration syntax, referential integrity, and template parsing
+cargo run -p struktur-cli -- validate
+```
 
 ### Generating Cover Letters
 
