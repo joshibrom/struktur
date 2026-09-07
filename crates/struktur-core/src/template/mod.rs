@@ -8,110 +8,8 @@ use std::io::Write;
 use serde::Serialize;
 use tera::Tera;
 
-use crate::{
-    config::{Bullet, Preset, UserConfig},
-    profile::Profile,
-};
-
-pub mod plaintext;
-
-/// Context data passed into template engines for document rendering.
-#[derive(Serialize, Debug, Clone)]
-pub struct TemplateContext {
-    /// Target job role or position title (e.g. "Senior Backend Engineer").
-    pub role: String,
-    /// Target company or organization name (e.g. "Acme Corp").
-    pub company: String,
-    /// Date of application (e.g. "August 29, 2026").
-    pub date: String,
-
-    /// Resolved accomplishment bullet points for the selected preset.
-    pub bullets: Vec<Bullet>,
-    /// Pre-rendered opening hook paragraph with interpolated role and company.
-    pub opening_hook: String,
-    /// Pre-rendered closing hook paragraph with interpolated role and company.
-    pub closing_hook: String,
-
-    /// Master candidate profile containing contact info, education, and experience.
-    pub profile: Profile,
-}
-
-impl TemplateContext {
-    /// Constructs and pre-renders a new `TemplateContext` from the given parameters.
-    ///
-    /// The preset's `opening_hook` and `closing_hook` template strings are evaluated
-    /// and pre-rendered using the provided `role`, `company`, `date`, `profile`, and `bullets`.
-    ///
-    /// # Errors
-    ///
-    /// Returns a [`TemplateError`] if pre-rendering either hook string fails.
-    pub fn new(
-        role: String,
-        company: String,
-        date: String,
-        profile: Profile,
-        preset: &Preset,
-        config: &UserConfig,
-    ) -> Result<Self, TemplateError> {
-        let bullets = preset
-            .default_bullets
-            .iter()
-            .filter_map(|id| config.bullets.get(id))
-            .cloned()
-            .collect::<Vec<_>>();
-
-        let opening_hook = Self::pre_render(
-            &preset.opening_hook,
-            &role,
-            &company,
-            &date,
-            &profile,
-            &bullets,
-        )?;
-
-        let closing_hook = Self::pre_render(
-            &preset.closing_hook,
-            &role,
-            &company,
-            &date,
-            &profile,
-            &bullets,
-        )?;
-
-        Ok(Self {
-            role,
-            company,
-            date,
-            bullets,
-            profile,
-            opening_hook,
-            closing_hook,
-        })
-    }
-
-    /// Evaluates a template snippet with the current context variables.
-    fn pre_render(
-        item: &str,
-        role: &str,
-        company: &str,
-        date: &str,
-        profile: &Profile,
-        bullets: &[Bullet],
-    ) -> Result<String, TemplateError> {
-        let mut tera = Tera::default();
-        tera.autoescape_on(Vec::<&str>::new());
-
-        let mut ctx = tera::Context::new();
-        ctx.insert("role", role);
-        ctx.insert("company", company);
-        ctx.insert("date", date);
-        ctx.insert("profile", profile);
-        ctx.insert("bullets", bullets);
-
-        tera.render_str(item, &ctx, false)
-            .map_err(TemplateError::TemplateRenderError)
-    }
-}
+pub mod cover_letter;
+pub mod cv;
 
 /// Errors that can occur during template loading, parsing, serialization, or rendering.
 #[derive(thiserror::Error, Debug)]
@@ -133,15 +31,40 @@ pub enum TemplateError {
     TemplateContextSerializationError(tera::Error),
 }
 
-/// A document template that can be rendered using a [`TemplateContext`].
+/// High-level document category defining template directory structure and semantic role.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TemplateArchetype {
+    /// Curriculum Vitae or comprehensive candidate resume.
+    Cv,
+    /// Tailored job application cover letter.
+    CoverLetter,
+}
+
+impl TemplateArchetype {
+    /// Returns the filesystem directory name associated with this archetype.
+    pub fn to_dirname(self) -> &'static str {
+        match self {
+            Self::Cv => "cv",
+            Self::CoverLetter => "cover-letter",
+        }
+    }
+}
+
+/// A document template that can be rendered using a serializable context.
 ///
-/// Implementations define a file name and an embedded default fallback template.
+/// Implementations define a file name, document archetype, and an embedded default fallback template.
 /// When rendering, the implementation first checks for a user-customized template
-/// file on disk (in `~/.config/struktur/templates/<file_name>`), falling back to
+/// file on disk (in `~/.config/struktur/templates/<archetype>/<file_name>`), falling back to
 /// the embedded default if no custom template exists.
 pub trait RenderableTemplate {
+    /// The input context type serialized and passed into the Tera template engine.
+    type BaseContext: Serialize;
+
     /// The template file name on disk (e.g. `plaintext.tera`).
     fn file_name() -> &'static str;
+
+    /// The archetype category that groups this template on disk.
+    fn get_archetype() -> TemplateArchetype;
 
     /// The embedded default template used when no user file exists on disk.
     fn get_default_template() -> &'static str;
@@ -161,7 +84,10 @@ pub trait RenderableTemplate {
             })?
             .config_dir()
             .to_owned();
-        Ok(path.join("templates").join(Self::file_name()))
+        Ok(path
+            .join("templates")
+            .join(Self::get_archetype().to_dirname())
+            .join(Self::file_name()))
     }
 
     /// Checks whether the custom template file exists on disk.
@@ -197,13 +123,13 @@ pub trait RenderableTemplate {
         }
     }
 
-    /// Renders the template using the provided [`TemplateContext`].
+    /// Renders the template using the provided context.
     ///
     /// # Errors
     ///
     /// Returns a [`TemplateError`] if template registration, context serialization,
     /// or rendering fails.
-    fn render(context: &TemplateContext) -> Result<String, TemplateError> {
+    fn render(context: &Self::BaseContext) -> Result<String, TemplateError> {
         let template = Self::get_template();
 
         let mut tera = Tera::new();
@@ -244,75 +170,11 @@ pub trait RenderableTemplate {
 
 #[cfg(test)]
 mod tests {
-    use super::{plaintext::PlaintextTemplate, *};
+    use super::*;
 
     #[test]
-    fn test_template_context_new_and_prerender() {
-        let profile = Profile::default();
-        let config = UserConfig::default();
-        let preset = config.presets.get("backend").expect("preset should exist");
-
-        let context = TemplateContext::new(
-            "Principal Engineer".into(),
-            "Acme Corp".into(),
-            "2026-08-29".into(),
-            profile.clone(),
-            preset,
-            &config,
-        )
-        .expect("context creation should succeed");
-
-        assert_eq!(context.role, "Principal Engineer");
-        assert_eq!(context.company, "Acme Corp");
-        assert_eq!(context.date, "2026-08-29");
-        assert_eq!(context.profile.name, profile.name);
-        assert!(!context.bullets.is_empty());
-
-        // Verify pre-rendered hooks replaced variables
-        assert!(context.opening_hook.contains("Principal Engineer"));
-        assert!(context.opening_hook.contains("Acme Corp"));
-        assert!(!context.opening_hook.contains("{{ role }}"));
-        assert!(!context.opening_hook.contains("{{ company }}"));
-
-        assert!(context.closing_hook.contains("Acme Corp"));
-        assert!(!context.closing_hook.contains("{{ company }}"));
-    }
-
-    #[test]
-    fn test_plaintext_template_render() {
-        let profile = Profile::default();
-        let config = UserConfig::default();
-        let preset = config.presets.get("backend").expect("preset should exist");
-
-        let context = TemplateContext::new(
-            "Staff Backend Engineer".into(),
-            "Stripe".into(),
-            "August 29, 2026".into(),
-            profile.clone(),
-            preset,
-            &config,
-        )
-        .expect("context creation should succeed");
-
-        let rendered = PlaintextTemplate::render(&context).expect("rendering should succeed");
-
-        assert!(rendered.contains(&profile.name));
-        assert!(rendered.contains(&profile.email));
-        assert!(rendered.contains("August 29, 2026"));
-        assert!(rendered.contains("Regarding: Staff Backend Engineer Position"));
-        assert!(rendered.contains("Stripe"));
-        assert!(rendered.contains("Key Highlights:"));
-
-        for bullet in &context.bullets {
-            assert!(rendered.contains(&bullet.text));
-        }
-    }
-
-    #[test]
-    fn test_default_template_fallback() {
-        let fallback = PlaintextTemplate::get_default_template();
-        assert!(fallback.contains("{{ profile.name }}"));
-        assert!(fallback.contains("{{ opening_hook }}"));
-        assert!(fallback.contains("{{ closing_hook }}"));
+    fn test_template_archetype_to_dirname() {
+        assert_eq!(TemplateArchetype::Cv.to_dirname(), "cv");
+        assert_eq!(TemplateArchetype::CoverLetter.to_dirname(), "cover-letter");
     }
 }

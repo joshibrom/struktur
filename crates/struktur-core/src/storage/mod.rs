@@ -10,7 +10,10 @@ use self::document::{Document, DocumentError};
 use crate::{
     config::UserConfig,
     profile::Profile,
-    template::{RenderableTemplate, TemplateError, plaintext::PlaintextTemplate},
+    template::{
+        RenderableTemplate, TemplateError, cover_letter::plaintext::PlaintextTemplate,
+        cv::plaintext::PlaintextCvTemplate,
+    },
 };
 
 pub mod document;
@@ -47,6 +50,9 @@ pub fn init_storage() -> Result<(), StorageInitError> {
     }
     if !PlaintextTemplate::exists()? {
         PlaintextTemplate::write_default_template()?;
+    }
+    if !PlaintextCvTemplate::exists()? {
+        PlaintextCvTemplate::write_default_template()?;
     }
     Ok(())
 }

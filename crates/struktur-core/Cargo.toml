@@ -9,10 +9,10 @@ repository.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+tera.workspace = true
 thiserror.workspace = true
 time.workspace = true
 uuid.workspace = true
 directories.workspace = true
 rusqlite.workspace = true
 toml = "1.1.4"
-tera = { version = "2", features = ["fast"] }

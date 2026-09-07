@@ -53,4 +53,78 @@ pub enum Commands {
         #[arg(short, long, help = "Copy output to the system clipboard")]
         clipboard: bool,
     },
+
+    /// List configured resources (presets, bullets, etc.)
+    #[command(subcommand, about = "List available presets or bullets")]
+    List(ListCommand),
+
+    /// Display filesystem paths and existence status for project files.
+    #[command(about = "Display project file paths and status")]
+    Status,
+
+    /// Validate configuration, profile, and template files for syntax or reference errors.
+    #[command(about = "Validate configuration, profile, and template files")]
+    Validate,
+
+    /// Manage and inspect the candidate master profile.
+    #[command(subcommand, about = "Manage and inspect user profile")]
+    Profile(ProfileCommand),
+
+    /// Open project configuration and profile files in an editor.
+    #[command(subcommand, about = "Open project configuration or profile in $EDITOR")]
+    Edit(EditCommand),
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ListCommand {
+    /// List all configured bullets in a table
+    #[command(about = "List all configured bullets")]
+    Bullets {
+        /// Optionally filter bullets by a tag name
+        #[arg(short, long, help = "Filter by bullets with given tag")]
+        tag: Option<String>,
+    },
+    /// List all configured role presets in a table
+    #[command(about = "List all configured role presets")]
+    Presets,
+}
+
+/// Available profile subcommands.
+#[derive(Subcommand, Debug)]
+pub enum ProfileCommand {
+    /// Display a formatted summary of the candidate profile.
+    #[command(about = "Display formatted candidate profile summary")]
+    Show {
+        /// Output profile information in JSON format
+        #[arg(short, long, help = "Output profile information in JSON format")]
+        json: bool,
+    },
+}
+
+/// Available edit subcommands specifying which file to open in an editor.
+#[derive(Subcommand, Debug)]
+pub enum EditCommand {
+    /// Open config.toml in your default editor.
+    #[command(about = "Open config.toml in your default editor")]
+    Config,
+
+    /// Open profile.toml in your default editor.
+    #[command(about = "Open profile.toml in your default editor")]
+    Profile,
+
+    /// Open specified template in your default editor.
+    #[command(subcommand, about = "Open a specified template in your default editor")]
+    Template(EditTemplateCommand),
+}
+
+/// Available template targets for editing in an editor.
+#[derive(Subcommand, Debug)]
+pub enum EditTemplateCommand {
+    /// Open the cover letter template in your default editor.
+    #[command(about = "Open the cover letter template in your default editor")]
+    CoverLetter,
+
+    /// Open the CV template in your default editor.
+    #[command(about = "Open the CV template in your default editor")]
+    Cv,
 }

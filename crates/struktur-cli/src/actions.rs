@@ -5,17 +5,26 @@ use struktur_core::{
     config::UserConfig,
     profile::Profile,
     storage::document::Document,
-    template::{RenderableTemplate, TemplateContext, plaintext::PlaintextTemplate},
+    template::{
+        RenderableTemplate,
+        cover_letter::{CoverLetterTemplateContext, plaintext::PlaintextTemplate},
+        cv::plaintext::PlaintextCvTemplate,
+    },
 };
 
-use crate::helpers::{OutputContentType, OutputPath};
+use crate::{
+    helpers::{OutputContentType, OutputPath, open_file_in_editor},
+    inspection,
+};
+
+pub type ActionResult = AnyResult<()>;
 
 /// Initializes project storage by creating default `config.toml`, `profile.toml`, and template files.
 ///
 /// # Errors
 ///
 /// Returns an error if directory creation or file writing fails.
-pub fn init() -> AnyResult<()> {
+pub fn init() -> ActionResult {
     struktur_core::storage::init_storage()?;
     println!("Created project files.");
     Ok(())
@@ -33,7 +42,7 @@ pub fn generate(
     role: String,
     date: String,
     output_path: OutputPath,
-) -> AnyResult<()> {
+) -> ActionResult {
     let config = UserConfig::load()?;
     let profile = Profile::load()?;
 
@@ -42,9 +51,124 @@ pub fn generate(
         .get(&preset_name)
         .ok_or(anyhow::anyhow!("Unknown preset: {preset_name}"))?;
 
-    let context = TemplateContext::new(role, company, date, profile, preset, &config)?;
+    let context = CoverLetterTemplateContext::new(role, company, date, profile, preset, &config)?;
 
     let content = PlaintextTemplate::render(&context)?;
 
     output_path.output(content, OutputContentType::CoverLetter)
+}
+
+/// Lists all configured presets formatted as a terminal table.
+pub fn list_presets() -> ActionResult {
+    let config = UserConfig::load()?;
+
+    let table = inspection::listing::presets::list_presets_as_table(&config);
+
+    println!("{table}");
+
+    Ok(())
+}
+
+/// Lists all configured accomplishment bullets, optionally filtered by tag.
+pub fn list_bullets(tag_filter: Option<String>) -> ActionResult {
+    let config = UserConfig::load()?;
+
+    let table = inspection::listing::bullets::list_bullets_as_table(&config, tag_filter);
+
+    println!("{table}");
+
+    Ok(())
+}
+
+/// Displays the filesystem paths and existence status of all project files.
+pub fn get_status() -> ActionResult {
+    inspection::status::check()
+        .into_iter()
+        .for_each(|check| println!("{check}"));
+
+    Ok(())
+}
+
+/// Validates the format, syntax, and references of configuration, profile, and template files.
+///
+/// # Errors
+///
+/// Returns an error if one or more project files fail validation.
+pub fn validate() -> ActionResult {
+    let checks = inspection::validate::check();
+    let has_errors = checks.iter().any(|check| !check.is_valid());
+
+    for check in &checks {
+        println!("{check}");
+    }
+
+    if has_errors {
+        anyhow::bail!("One or more project files failed validation.");
+    }
+
+    Ok(())
+}
+
+/// Loads and displays the candidate profile in a formatted terminal view.
+///
+/// # Errors
+///
+/// Returns an error if the user profile cannot be loaded or rendered.
+pub fn show_profile(as_json: bool) -> ActionResult {
+    let profile = Profile::load()?;
+
+    let output = if as_json {
+        serde_json::to_string_pretty(&profile)?
+    } else {
+        inspection::profile::show_profile(profile)?
+    };
+    println!("{output}");
+
+    Ok(())
+}
+
+/// Opens `config.toml` in the user's default text editor.
+///
+/// # Errors
+///
+/// Returns an error if the configuration path cannot be resolved or the editor fails to launch.
+pub fn edit_config() -> ActionResult {
+    edit_document::<UserConfig>()
+}
+
+/// Opens `profile.toml` in the user's default text editor.
+///
+/// # Errors
+///
+/// Returns an error if the profile path cannot be resolved or the editor fails to launch.
+pub fn edit_profile() -> ActionResult {
+    edit_document::<Profile>()
+}
+
+/// Opens the cover letter template in the user's default text editor.
+///
+/// # Errors
+///
+/// Returns an error if the template path cannot be resolved or the editor fails to launch.
+pub fn edit_cover_letter_template() -> ActionResult {
+    edit_template::<PlaintextTemplate>()
+}
+
+/// Opens the CV template in the user's default text editor.
+///
+/// # Errors
+///
+/// Returns an error if the template path cannot be resolved or the editor fails to launch.
+pub fn edit_cv_template() -> ActionResult {
+    edit_template::<PlaintextCvTemplate>()
+}
+
+fn edit_document<D: Document>() -> ActionResult {
+    let path = D::get_path()?;
+    Ok(open_file_in_editor(&path)?)
+}
+
+fn edit_template<T: RenderableTemplate>() -> ActionResult {
+    let path = T::get_path()?;
+    Ok(open_file_in_editor(&path)?)
 }

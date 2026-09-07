@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 /// A document that can be persisted to and loaded from a standard system path.
 ///
