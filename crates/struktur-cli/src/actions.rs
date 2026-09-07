@@ -8,6 +8,7 @@ use struktur_core::{
     template::{
         RenderableTemplate,
         cover_letter::{CoverLetterTemplateContext, plaintext::PlaintextTemplate},
+        cv::plaintext::PlaintextCvTemplate,
     },
 };
 
@@ -122,6 +123,24 @@ pub fn edit_config() -> ActionResult {
 /// Returns an error if the profile path cannot be resolved or the editor fails to launch.
 pub fn edit_profile() -> ActionResult {
     edit_document::<Profile>()
+}
+
+/// Opens the cover letter template in the user's default text editor.
+///
+/// # Errors
+///
+/// Returns an error if the template path cannot be resolved or the editor fails to launch.
+pub fn edit_cover_letter_template() -> ActionResult {
+    edit_template::<PlaintextTemplate>()
+}
+
+/// Opens the CV template in the user's default text editor.
+///
+/// # Errors
+///
+/// Returns an error if the template path cannot be resolved or the editor fails to launch.
+pub fn edit_cv_template() -> ActionResult {
+    edit_template::<PlaintextCvTemplate>()
 }
 
 fn edit_document<D: Document>() -> ActionResult {

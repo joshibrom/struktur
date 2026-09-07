@@ -2,7 +2,7 @@
 
 use clap::Parser;
 
-use crate::cmd::{Cli, Commands, EditCommand, ListCommand, ProfileCommand};
+use crate::cmd::{Cli, Commands, EditCommand, EditTemplateCommand, ListCommand, ProfileCommand};
 
 mod actions;
 mod cmd;
@@ -42,6 +42,10 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         Commands::Edit(ec) => match ec {
             EditCommand::Config => actions::edit_config(),
             EditCommand::Profile => actions::edit_profile(),
+            EditCommand::Template(template) => match template {
+                EditTemplateCommand::CoverLetter => actions::edit_cover_letter_template(),
+                EditTemplateCommand::Cv => actions::edit_cv_template(),
+            },
         },
     }
 }

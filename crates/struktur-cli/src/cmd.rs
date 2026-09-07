@@ -107,4 +107,20 @@ pub enum EditCommand {
     /// Open profile.toml in your default editor.
     #[command(about = "Open profile.toml in your default editor")]
     Profile,
+
+    /// Open specified template in your default editor.
+    #[command(subcommand, about = "Open a specified template in your default editor")]
+    Template(EditTemplateCommand),
+}
+
+/// Available template targets for editing in an editor.
+#[derive(Subcommand, Debug)]
+pub enum EditTemplateCommand {
+    /// Open the cover letter template in your default editor.
+    #[command(about = "Open the cover letter template in your default editor")]
+    CoverLetter,
+
+    /// Open the CV template in your default editor.
+    #[command(about = "Open the CV template in your default editor")]
+    Cv,
 }
