@@ -16,3 +16,4 @@ uuid.workspace = true
 directories.workspace = true
 rusqlite.workspace = true
 toml = "1.1.4"
+strum = { version = "0.28.0", features = ["derive"] }
