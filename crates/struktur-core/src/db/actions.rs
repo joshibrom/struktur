@@ -2,15 +2,14 @@ use rusqlite::{OptionalExtension, params};
 
 use crate::db::{
     DatabaseError,
-    models::{Job, JobEvent, JobStatus},
+    models::{Job, JobEvent, JobEventType, JobStatus},
 };
 
-pub fn within_transaction<T, Func>(
-    conn: &mut rusqlite::Connection,
-    func: Func,
-) -> Result<T, DatabaseError>
+pub type ActionResult<T> = Result<T, DatabaseError>;
+
+pub fn within_transaction<T, Func>(conn: &mut rusqlite::Connection, func: Func) -> ActionResult<T>
 where
-    Func: FnOnce(&rusqlite::Transaction) -> Result<T, DatabaseError>,
+    Func: FnOnce(&rusqlite::Transaction) -> ActionResult<T>,
 {
     let mut tx = conn.transaction()?;
     let val = func(&mut tx)?;
@@ -18,7 +17,22 @@ where
     Ok(val)
 }
 
-pub fn get_job(tx: &rusqlite::Connection, job_id: &str) -> Result<Option<Job>, DatabaseError> {
+pub fn list_jobs(
+    tx: &rusqlite::Connection,
+    status_filter: Option<JobStatus>,
+) -> ActionResult<Vec<Job>> {
+    let mut stmt = tx.prepare(
+        "SELECT * FROM jobs
+        WHERE (?1 IS NULL OR status = ?1)
+        ORDER BY updated_at ASC",
+    )?;
+    let jobs = stmt
+        .query_map(params![status_filter], |row| row.try_into())?
+        .collect::<Result<Vec<Job>, _>>()?;
+    Ok(jobs)
+}
+
+pub fn get_job(tx: &rusqlite::Connection, job_id: &str) -> ActionResult<Option<Job>> {
     Ok(tx
         .query_row("SELECT * FROM jobs WHERE id = ?1", params![job_id], |row| {
             row.try_into()
@@ -26,7 +40,7 @@ pub fn get_job(tx: &rusqlite::Connection, job_id: &str) -> Result<Option<Job>, D
         .optional()?)
 }
 
-pub fn insert_job(tx: &rusqlite::Connection, job: &Job) -> Result<(), DatabaseError> {
+pub fn insert_job(tx: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
     tx.execute(
         "INSERT INTO jobs
         (id, company, role, status, location, date_applied, salary_range, job_url, contact_name, contact_email, notes, created_at, updated_at)
@@ -49,7 +63,7 @@ pub fn insert_job(tx: &rusqlite::Connection, job: &Job) -> Result<(), DatabaseEr
     Ok(())
 }
 
-pub fn update_job(tx: &rusqlite::Connection, job: &Job) -> Result<(), DatabaseError> {
+pub fn update_job(tx: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
     tx.execute(
         "UPDATE jobs SET
         company = ?2, role = ?3, status = ?4, location = ?5, date_applied = ?6, salary_range = ?7, job_url = ?8, contact_name = ?9, contact_email = ?10, notes = ?11, updated_at = ?12
@@ -71,10 +85,20 @@ pub fn update_job(tx: &rusqlite::Connection, job: &Job) -> Result<(), DatabaseEr
     Ok(())
 }
 
-pub fn insert_job_event(
-    tx: &rusqlite::Connection,
-    job_event: &JobEvent,
-) -> Result<(), DatabaseError> {
+pub fn list_jobs_events(tx: &rusqlite::Connection, job_id: &str) -> ActionResult<Vec<JobEvent>> {
+    let mut stmt = tx.prepare(
+        "SELECT * FROM job_events
+        WHERE job_id = ?1
+        ORDER BY event_date ASC",
+    )?;
+    let events = stmt
+        .query_map(params![job_id], |row| row.try_into())?
+        .collect::<Result<Vec<JobEvent>, _>>()?;
+
+    Ok(events)
+}
+
+pub fn insert_job_event(tx: &rusqlite::Connection, job_event: &JobEvent) -> ActionResult<()> {
     tx.execute(
         "INSERT INTO job_events
         (id, job_id, event_type, title, from_status, to_status, contact_name, contact_email, description, event_date, created_at)
@@ -100,7 +124,7 @@ pub fn transition_job_status(
     job_id: &str,
     new_status: JobStatus,
     description: impl Into<String>,
-) -> Result<(Job, JobEvent), DatabaseError> {
+) -> ActionResult<(Job, JobEvent)> {
     let tx = conn.transaction()?;
 
     let mut job = get_job(&tx, job_id)?.ok_or(rusqlite::Error::QueryReturnedNoRows)?;
