@@ -4,6 +4,7 @@ use rusqlite::Connection;
 
 use crate::storage::get_project_dirs;
 
+pub mod actions;
 mod migrations;
 pub mod models;
 

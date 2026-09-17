@@ -110,6 +110,28 @@ impl Job {
     }
 }
 
+impl TryFrom<&rusqlite::Row<'_>> for Job {
+    type Error = rusqlite::Error;
+
+    fn try_from(row: &rusqlite::Row) -> Result<Self, Self::Error> {
+        Ok(Job {
+            id: row.get("id")?,
+            company: row.get("company")?,
+            role: row.get("role")?,
+            status: row.get("status")?,
+            location: row.get("location")?,
+            date_applied: row.get("date_applied")?,
+            salary_range: row.get("salary_range")?,
+            job_url: row.get("job_url")?,
+            contact_name: row.get("contact_name")?,
+            contact_email: row.get("contact_email")?,
+            notes: row.get("notes")?,
+            created_at: row.get("created_at")?,
+            updated_at: row.get("updated_at")?,
+        })
+    }
+}
+
 #[derive(StrumDisplay, EnumString, Default, Debug, Clone, Copy, PartialEq, Eq)]
 #[strum(serialize_all = "snake_case")]
 pub enum JobStatus {
@@ -202,6 +224,26 @@ impl JobEvent {
         self.from_status = Some(from);
         self.to_status = Some(to);
         self
+    }
+}
+
+impl TryFrom<&rusqlite::Row<'_>> for JobEvent {
+    type Error = rusqlite::Error;
+
+    fn try_from(row: &rusqlite::Row) -> Result<Self, Self::Error> {
+        Ok(JobEvent {
+            id: row.get("id")?,
+            job_id: row.get("job_id")?,
+            event_type: row.get("event_type")?,
+            title: row.get("title")?,
+            from_status: row.get("from_status")?,
+            to_status: row.get("to_status")?,
+            description: row.get("description")?,
+            contact_name: row.get("contact_name")?,
+            contact_email: row.get("contact_email")?,
+            event_date: row.get("event_date")?,
+            created_at: row.get("created_at")?,
+        })
     }
 }
 
