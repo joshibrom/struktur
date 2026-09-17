@@ -3,7 +3,10 @@
 use anyhow::Result as AnyResult;
 use struktur_core::{
     config::UserConfig,
-    db::{self, models::JobStatus},
+    db::{
+        self,
+        models::{Job, JobStatus},
+    },
     profile::Profile,
     storage::document::Document,
     template::{
@@ -173,6 +176,17 @@ fn edit_document<D: Document>() -> ActionResult {
 fn edit_template<T: RenderableTemplate>() -> ActionResult {
     let path = T::get_path()?;
     Ok(open_file_in_editor(&path)?)
+}
+
+pub fn add_job(company: String, role: String) -> ActionResult {
+    let job = Job::new(company, role);
+
+    let mut conn = db::open()?;
+    db::actions::within_transaction(&mut conn, |conn| db::actions::insert_job(conn, &job))?;
+
+    println!("Added {} at {} (ID: {})", job.role, job.company, job.id);
+
+    Ok(())
 }
 
 pub fn list_jobs(status_filter: Option<JobStatus>) -> ActionResult {

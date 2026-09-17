@@ -136,6 +136,13 @@ pub enum EditTemplateCommand {
 #[derive(Subcommand, Debug)]
 pub enum JobCommand {
     #[command()]
+    Add {
+        #[arg(long)]
+        company: String,
+        #[arg(long)]
+        role: String,
+    },
+    #[command()]
     List {
         #[arg(long)]
         status: Option<JobStatus>,
