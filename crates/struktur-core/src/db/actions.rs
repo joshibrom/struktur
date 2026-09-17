@@ -11,17 +11,17 @@ pub fn within_transaction<T, Func>(conn: &mut rusqlite::Connection, func: Func) 
 where
     Func: FnOnce(&rusqlite::Transaction) -> ActionResult<T>,
 {
-    let mut tx = conn.transaction()?;
-    let val = func(&mut tx)?;
-    tx.commit()?;
+    let mut conn = conn.transaction()?;
+    let val = func(&mut conn)?;
+    conn.commit()?;
     Ok(val)
 }
 
 pub fn list_jobs(
-    tx: &rusqlite::Connection,
+    conn: &rusqlite::Connection,
     status_filter: Option<JobStatus>,
 ) -> ActionResult<Vec<Job>> {
-    let mut stmt = tx.prepare(
+    let mut stmt = conn.prepare(
         "SELECT * FROM jobs
         WHERE (?1 IS NULL OR status = ?1)
         ORDER BY updated_at ASC",
@@ -32,16 +32,16 @@ pub fn list_jobs(
     Ok(jobs)
 }
 
-pub fn get_job(tx: &rusqlite::Connection, job_id: &str) -> ActionResult<Option<Job>> {
-    Ok(tx
+pub fn get_job(conn: &rusqlite::Connection, job_id: &str) -> ActionResult<Option<Job>> {
+    Ok(conn
         .query_row("SELECT * FROM jobs WHERE id = ?1", params![job_id], |row| {
             row.try_into()
         })
         .optional()?)
 }
 
-pub fn insert_job(tx: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
-    tx.execute(
+pub fn insert_job(conn: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
+    conn.execute(
         "INSERT INTO jobs
         (id, company, role, status, location, date_applied, salary_range, job_url, contact_name, contact_email, notes, created_at, updated_at)
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)"
@@ -63,8 +63,8 @@ pub fn insert_job(tx: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
     Ok(())
 }
 
-pub fn update_job(tx: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
-    tx.execute(
+pub fn update_job(conn: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
+    conn.execute(
         "UPDATE jobs SET
         company = ?2, role = ?3, status = ?4, location = ?5, date_applied = ?6, salary_range = ?7, job_url = ?8, contact_name = ?9, contact_email = ?10, notes = ?11, updated_at = ?12
         WHERE id = ?1"
@@ -85,8 +85,8 @@ pub fn update_job(tx: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
     Ok(())
 }
 
-pub fn list_jobs_events(tx: &rusqlite::Connection, job_id: &str) -> ActionResult<Vec<JobEvent>> {
-    let mut stmt = tx.prepare(
+pub fn list_jobs_events(conn: &rusqlite::Connection, job_id: &str) -> ActionResult<Vec<JobEvent>> {
+    let mut stmt = conn.prepare(
         "SELECT * FROM job_events
         WHERE job_id = ?1
         ORDER BY event_date ASC",
@@ -98,8 +98,8 @@ pub fn list_jobs_events(tx: &rusqlite::Connection, job_id: &str) -> ActionResult
     Ok(events)
 }
 
-pub fn insert_job_event(tx: &rusqlite::Connection, job_event: &JobEvent) -> ActionResult<()> {
-    tx.execute(
+pub fn insert_job_event(conn: &rusqlite::Connection, job_event: &JobEvent) -> ActionResult<()> {
+    conn.execute(
         "INSERT INTO job_events
         (id, job_id, event_type, title, from_status, to_status, contact_name, contact_email, description, event_date, created_at)
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)"
@@ -125,15 +125,15 @@ pub fn transition_job_status(
     new_status: JobStatus,
     description: impl Into<String>,
 ) -> ActionResult<(Job, JobEvent)> {
-    let tx = conn.transaction()?;
+    let conn = conn.transaction()?;
 
-    let mut job = get_job(&tx, job_id)?.ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+    let mut job = get_job(&conn, job_id)?.ok_or(rusqlite::Error::QueryReturnedNoRows)?;
     let event = job.transition_status(new_status, description);
 
-    update_job(&tx, &job)?;
-    insert_job_event(&tx, &event)?;
+    update_job(&conn, &job)?;
+    insert_job_event(&conn, &event)?;
 
-    tx.commit()?;
+    conn.commit()?;
     Ok((job, event))
 }
 
@@ -188,7 +188,7 @@ mod tests {
         let mut job = Job::new("Acme Corp", "Backend Engineer");
         insert_job(&conn, &job).unwrap();
 
-        job.location = Some("Austin, TX".to_string());
+        job.location = Some("Austin, conn".to_string());
         job.salary_range = Some("$150k - $175k".to_string());
         job.notes = Some("Updated notes".to_string());
         job.updated_at = OffsetDateTime::now_utc();
@@ -196,7 +196,7 @@ mod tests {
         update_job(&conn, &job).unwrap();
 
         let updated = get_job(&conn, &job.id).unwrap().expect("job should exist");
-        assert_eq!(updated.location.as_deref(), Some("Austin, TX"));
+        assert_eq!(updated.location.as_deref(), Some("Austin, conn"));
         assert_eq!(updated.salary_range.as_deref(), Some("$150k - $175k"));
         assert_eq!(updated.notes.as_deref(), Some("Updated notes"));
     }
@@ -254,8 +254,8 @@ mod tests {
         let job = Job::new("Datadog", "Software Engineer");
 
         // Successful transaction commits
-        within_transaction(&mut conn, |tx| {
-            insert_job(tx, &job)?;
+        within_transaction(&mut conn, |conn| {
+            insert_job(conn, &job)?;
             Ok(())
         })
         .unwrap();
@@ -264,8 +264,8 @@ mod tests {
 
         // Error rolls back
         let job2 = Job::new("Elastic", "Systems Engineer");
-        let result: Result<(), _> = within_transaction(&mut conn, |tx| {
-            insert_job(tx, &job2)?;
+        let result: Result<(), _> = within_transaction(&mut conn, |conn| {
+            insert_job(conn, &job2)?;
             Err(DatabaseError::Io(std::io::Error::other(
                 "simulated failure",
             )))
