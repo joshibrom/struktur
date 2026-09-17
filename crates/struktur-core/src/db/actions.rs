@@ -5,13 +5,15 @@ use crate::db::{
     models::{Job, JobEvent, JobStatus},
 };
 
-pub fn within_transaction<Data, FuncRet>(
+pub fn within_transaction<T, Func>(
     conn: &mut rusqlite::Connection,
-    func: impl FnOnce(&rusqlite::Transaction, &Data) -> Result<FuncRet, DatabaseError>,
-    data: &Data,
-) -> Result<FuncRet, DatabaseError> {
+    func: Func,
+) -> Result<T, DatabaseError>
+where
+    Func: FnOnce(&rusqlite::Transaction) -> Result<T, DatabaseError>,
+{
     let mut tx = conn.transaction()?;
-    let val = func(&mut tx, data)?;
+    let val = func(&mut tx)?;
     tx.commit()?;
     Ok(val)
 }
@@ -228,30 +230,22 @@ mod tests {
         let job = Job::new("Datadog", "Software Engineer");
 
         // Successful transaction commits
-        within_transaction(
-            &mut conn,
-            |tx, data| {
-                insert_job(tx, data)?;
-                Ok(())
-            },
-            &job,
-        )
+        within_transaction(&mut conn, |tx| {
+            insert_job(tx, &job)?;
+            Ok(())
+        })
         .unwrap();
 
         assert!(get_job(&conn, &job.id).unwrap().is_some());
 
         // Error rolls back
         let job2 = Job::new("Elastic", "Systems Engineer");
-        let result: Result<(), _> = within_transaction(
-            &mut conn,
-            |tx, data| {
-                insert_job(tx, data)?;
-                Err(DatabaseError::Io(std::io::Error::other(
-                    "simulated failure",
-                )))
-            },
-            &job2,
-        );
+        let result: Result<(), _> = within_transaction(&mut conn, |tx| {
+            insert_job(tx, &job2)?;
+            Err(DatabaseError::Io(std::io::Error::other(
+                "simulated failure",
+            )))
+        });
 
         assert!(result.is_err());
         assert!(get_job(&conn, &job2.id).unwrap().is_none());
