@@ -8,7 +8,7 @@ pub mod actions;
 mod migrations;
 pub mod models;
 
-const DATABASE_FILE_NAME: &str = "jobs.db";
+pub const DATABASE_FILE_NAME: &str = "jobs.db";
 
 #[derive(thiserror::Error, Debug)]
 pub enum DatabaseError {

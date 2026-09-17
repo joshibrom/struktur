@@ -2,7 +2,7 @@ use rusqlite::{OptionalExtension, params};
 
 use crate::db::{
     DatabaseError,
-    models::{Job, JobEvent, JobEventType, JobStatus},
+    models::{Job, JobEvent, JobStatus},
 };
 
 pub type ActionResult<T> = Result<T, DatabaseError>;
@@ -17,14 +17,14 @@ where
     Ok(val)
 }
 
-pub fn list_jobs(
+pub fn get_jobs(
     conn: &rusqlite::Connection,
     status_filter: Option<JobStatus>,
 ) -> ActionResult<Vec<Job>> {
     let mut stmt = conn.prepare(
         "SELECT * FROM jobs
         WHERE (?1 IS NULL OR status = ?1)
-        ORDER BY updated_at ASC",
+        ORDER BY updated_at DESC",
     )?;
     let jobs = stmt
         .query_map(params![status_filter], |row| row.try_into())?
@@ -85,7 +85,7 @@ pub fn update_job(conn: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
     Ok(())
 }
 
-pub fn list_jobs_events(conn: &rusqlite::Connection, job_id: &str) -> ActionResult<Vec<JobEvent>> {
+pub fn get_job_events(conn: &rusqlite::Connection, job_id: &str) -> ActionResult<Vec<JobEvent>> {
     let mut stmt = conn.prepare(
         "SELECT * FROM job_events
         WHERE job_id = ?1

@@ -1,4 +1,5 @@
 pub mod bullets;
+pub mod db_models;
 pub mod presets;
 
 use super::to_table;

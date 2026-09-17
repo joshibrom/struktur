@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
+use struktur_core::db::models::JobStatus;
 
 /// Command-line parser for `struktur`.
 #[derive(Parser, Debug)]
@@ -73,6 +74,9 @@ pub enum Commands {
     /// Open project configuration and profile files in an editor.
     #[command(subcommand, about = "Open project configuration or profile in $EDITOR")]
     Edit(EditCommand),
+
+    #[command(subcommand)]
+    Job(JobCommand),
 }
 
 #[derive(Subcommand, Debug)]
@@ -127,4 +131,13 @@ pub enum EditTemplateCommand {
     /// Open the CV template in your default editor.
     #[command(about = "Open the CV template in your default editor")]
     Cv,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum JobCommand {
+    #[command()]
+    List {
+        #[arg(long)]
+        status: Option<JobStatus>,
+    },
 }

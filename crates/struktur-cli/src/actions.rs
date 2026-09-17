@@ -3,6 +3,7 @@
 use anyhow::Result as AnyResult;
 use struktur_core::{
     config::UserConfig,
+    db::{self, models::JobStatus},
     profile::Profile,
     storage::document::Document,
     template::{
@@ -26,6 +27,7 @@ pub type ActionResult = AnyResult<()>;
 /// Returns an error if directory creation or file writing fails.
 pub fn init() -> ActionResult {
     struktur_core::storage::init_storage()?;
+    struktur_core::db::open()?;
     println!("Created project files.");
     Ok(())
 }
@@ -171,4 +173,14 @@ fn edit_document<D: Document>() -> ActionResult {
 fn edit_template<T: RenderableTemplate>() -> ActionResult {
     let path = T::get_path()?;
     Ok(open_file_in_editor(&path)?)
+}
+
+pub fn list_jobs(status_filter: Option<JobStatus>) -> ActionResult {
+    let conn = db::open()?;
+    let jobs = db::actions::get_jobs(&conn, status_filter)?;
+
+    let table = inspection::listing::db_models::list_jobs_as_table(jobs.as_slice());
+    println!("{table}");
+
+    Ok(())
 }
