@@ -51,7 +51,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
             },
         },
         Commands::Job(jc) => match jc {
-            JobCommand::Add { company, role } => actions::add_job(company, role),
+            JobCommand::Add(args) => actions::add_job(*args),
             JobCommand::List { status } => actions::list_jobs(status),
         },
     }

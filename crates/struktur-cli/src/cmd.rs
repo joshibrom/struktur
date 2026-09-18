@@ -75,7 +75,8 @@ pub enum Commands {
     #[command(subcommand, about = "Open project configuration or profile in $EDITOR")]
     Edit(EditCommand),
 
-    #[command(subcommand)]
+    /// Manage and track job applications.
+    #[command(subcommand, about = "Manage and track job applications")]
     Job(JobCommand),
 }
 
@@ -133,18 +134,58 @@ pub enum EditTemplateCommand {
     Cv,
 }
 
+/// Available job tracking subcommands.
 #[derive(Subcommand, Debug)]
 pub enum JobCommand {
-    #[command()]
-    Add {
-        #[arg(long)]
-        company: String,
-        #[arg(long)]
-        role: String,
-    },
-    #[command()]
+    /// Add a new job application to track.
+    #[command(about = "Add a new job application to track")]
+    Add(Box<JobAddArgs>),
+
+    /// List job applications in a table.
+    #[command(about = "List tracked job applications")]
     List {
-        #[arg(long)]
+        /// Filter applications by status
+        #[arg(long, help = "Filter applications by status")]
         status: Option<JobStatus>,
     },
+}
+
+/// Command-line arguments for adding a new job application.
+#[derive(clap::Args, Debug)]
+pub struct JobAddArgs {
+    /// Target company or organization name.
+    #[arg(long, help = "Target company or organization name")]
+    pub company: String,
+
+    /// Target job title or role position.
+    #[arg(long, help = "Target job title or role position")]
+    pub role: String,
+
+    /// Initial application status (defaults to 'saved' if omitted).
+    #[arg(long, help = "Initial application status (e.g. 'saved', 'applied')")]
+    pub status: Option<JobStatus>,
+
+    /// Job location or work arrangement (e.g. 'Remote', 'New York, NY', 'Hybrid').
+    #[arg(long, help = "Job location or work arrangement")]
+    pub location: Option<String>,
+
+    /// Target salary or compensation range.
+    #[arg(long, help = "Salary or compensation range")]
+    pub salary: Option<String>,
+
+    /// URL to the job posting.
+    #[arg(long, help = "URL to the job posting")]
+    pub url: Option<String>,
+
+    /// Notes or referral details.
+    #[arg(long, help = "Notes or referral details")]
+    pub notes: Option<String>,
+
+    /// Primary recruiter, hiring manager, or referral contact name.
+    #[arg(long, help = "Primary contact name")]
+    pub contact_name: Option<String>,
+
+    /// Primary contact email address.
+    #[arg(long, help = "Primary contact email address")]
+    pub contact_email: Option<String>,
 }

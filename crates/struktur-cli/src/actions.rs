@@ -17,6 +17,7 @@ use struktur_core::{
 };
 
 use crate::{
+    cmd::JobAddArgs,
     helpers::{OutputContentType, OutputPath, open_file_in_editor},
     inspection,
 };
@@ -178,8 +179,28 @@ fn edit_template<T: RenderableTemplate>() -> ActionResult {
     Ok(open_file_in_editor(&path)?)
 }
 
-pub fn add_job(company: String, role: String) -> ActionResult {
-    let job = Job::new(company, role);
+/// Adds a new job application record to the local SQLite database.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened or if the database insertion transaction fails.
+pub fn add_job(args: JobAddArgs) -> ActionResult {
+    let mut job = Job::new(args.company, args.role);
+
+    if let Some(status) = args.status {
+        if status == JobStatus::Applied {
+            job = job.with_apply_now();
+        } else {
+            job.status = status;
+        }
+    }
+
+    job.location = args.location;
+    job.salary_range = args.salary;
+    job.job_url = args.url;
+    job.notes = args.notes;
+    job.contact_name = args.contact_name;
+    job.contact_email = args.contact_email;
 
     let mut conn = db::open()?;
     db::actions::within_transaction(&mut conn, |conn| db::actions::insert_job(conn, &job))?;
@@ -189,6 +210,11 @@ pub fn add_job(company: String, role: String) -> ActionResult {
     Ok(())
 }
 
+/// Lists tracked job applications formatted as a terminal table, optionally filtered by status.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened or if querying jobs fails.
 pub fn list_jobs(status_filter: Option<JobStatus>) -> ActionResult {
     let conn = db::open()?;
     let jobs = db::actions::get_jobs(&conn, status_filter)?;
