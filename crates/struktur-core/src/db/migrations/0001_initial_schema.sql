@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS jobs (
-    id              TEXT PRIMARY KEY,
+    id              INTEGER PRIMARY KEY,
     company         TEXT NOT NULL,
     role            TEXT NOT NULL,
     status          TEXT NOT NULL DEFAULT 'saved',  -- saved, applied, interviewing, offer, rejected, withdrawn
@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS jobs (
 );
 
 CREATE TABLE IF NOT EXISTS job_events (
-    id            TEXT PRIMARY KEY,
-    job_id        TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    id            INTEGER PRIMARY KEY,
+    job_id        INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
     event_type    TEXT NOT NULL,        -- status_change, note, interview, follow_up, offer
     title         TEXT,                 -- Optional summary (e.g. 'Recruiter Screen', 'Technical Round 1')
     from_status   TEXT,                 -- Optional for status changes
@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS job_events (
 );
 
 CREATE TABLE IF NOT EXISTS renderings (
-    id              TEXT PRIMARY KEY,
-    job_id          TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    id              INTEGER PRIMARY KEY,
+    job_id          INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
     preset_name     TEXT,
     output_type     TEXT NOT NULL,                  -- cover_letter, cv
     format          TEXT NOT NULL DEFAULT 'plaintext', -- plaintext, typst (Phase 5)

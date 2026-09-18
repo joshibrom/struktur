@@ -32,7 +32,7 @@ pub fn get_jobs(
     Ok(jobs)
 }
 
-pub fn get_job(conn: &rusqlite::Connection, job_id: &str) -> ActionResult<Option<Job>> {
+pub fn get_job(conn: &rusqlite::Connection, job_id: i64) -> ActionResult<Option<Job>> {
     Ok(conn
         .query_row("SELECT * FROM jobs WHERE id = ?1", params![job_id], |row| {
             row.try_into()
@@ -40,13 +40,12 @@ pub fn get_job(conn: &rusqlite::Connection, job_id: &str) -> ActionResult<Option
         .optional()?)
 }
 
-pub fn insert_job(conn: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
+pub fn insert_job(conn: &rusqlite::Connection, job: &Job) -> ActionResult<i64> {
     conn.execute(
         "INSERT INTO jobs
-        (id, company, role, status, location, date_applied, salary_range, job_url, contact_name, contact_email, notes, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)"
+        (company, role, status, location, date_applied, salary_range, job_url, contact_name, contact_email, notes, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)"
         , params![
-            job.id,
             job.company,
             job.role,
             job.status,
@@ -60,7 +59,7 @@ pub fn insert_job(conn: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
             job.created_at,
             job.updated_at,
         ])?;
-    Ok(())
+    Ok(conn.last_insert_rowid())
 }
 
 pub fn update_job(conn: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
@@ -85,7 +84,7 @@ pub fn update_job(conn: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
     Ok(())
 }
 
-pub fn get_job_events(conn: &rusqlite::Connection, job_id: &str) -> ActionResult<Vec<JobEvent>> {
+pub fn get_job_events(conn: &rusqlite::Connection, job_id: i64) -> ActionResult<Vec<JobEvent>> {
     let mut stmt = conn.prepare(
         "SELECT * FROM job_events
         WHERE job_id = ?1
@@ -101,10 +100,9 @@ pub fn get_job_events(conn: &rusqlite::Connection, job_id: &str) -> ActionResult
 pub fn insert_job_event(conn: &rusqlite::Connection, job_event: &JobEvent) -> ActionResult<()> {
     conn.execute(
         "INSERT INTO job_events
-        (id, job_id, event_type, title, from_status, to_status, contact_name, contact_email, description, event_date, created_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)"
+        (job_id, event_type, title, from_status, to_status, contact_name, contact_email, description, event_date, created_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)"
         , params![
-            job_event.id,
             job_event.job_id,
             job_event.event_type,
             job_event.title,
@@ -121,7 +119,7 @@ pub fn insert_job_event(conn: &rusqlite::Connection, job_event: &JobEvent) -> Ac
 
 pub fn transition_job_status(
     conn: &mut rusqlite::Connection,
-    job_id: &str,
+    job_id: i64,
     new_status: JobStatus,
     description: impl Into<String>,
 ) -> ActionResult<(Job, JobEvent)> {
@@ -153,16 +151,18 @@ mod tests {
     #[test]
     fn test_insert_and_get_job() {
         let conn = setup_test_db();
-        let job = Job::new("Stripe", "Staff Software Engineer")
+        let mut job = Job::new("Stripe", "Staff Software Engineer")
             .with_location("Remote")
             .with_salary_range("$180k - $220k")
             .with_job_url("https://stripe.com/jobs/123")
             .with_contact(Some("Sarah Recruiter"), Some("sarah@stripe.com"))
             .with_notes("Referred by Alex");
 
-        insert_job(&conn, &job).unwrap();
+        job.id = Some(insert_job(&conn, &job).unwrap());
 
-        let fetched = get_job(&conn, &job.id).unwrap().expect("job should exist");
+        let fetched = get_job(&conn, job.id.unwrap_or(-1))
+            .unwrap()
+            .expect("job should exist");
         assert_eq!(fetched.id, job.id);
         assert_eq!(fetched.company, "Stripe");
         assert_eq!(fetched.role, "Staff Software Engineer");
@@ -178,7 +178,7 @@ mod tests {
         assert_eq!(fetched.notes.as_deref(), Some("Referred by Alex"));
 
         // Fetching non-existent job returns Ok(None)
-        let non_existent = get_job(&conn, "non-existent-id").unwrap();
+        let non_existent = get_job(&conn, -1).unwrap();
         assert!(non_existent.is_none());
     }
 
@@ -186,7 +186,7 @@ mod tests {
     fn test_update_job() {
         let conn = setup_test_db();
         let mut job = Job::new("Acme Corp", "Backend Engineer");
-        insert_job(&conn, &job).unwrap();
+        job.id = Some(insert_job(&conn, &job).unwrap());
 
         job.location = Some("Austin, conn".to_string());
         job.salary_range = Some("$150k - $175k".to_string());
@@ -195,7 +195,9 @@ mod tests {
 
         update_job(&conn, &job).unwrap();
 
-        let updated = get_job(&conn, &job.id).unwrap().expect("job should exist");
+        let updated = get_job(&conn, job.id.expect("ID should exist"))
+            .unwrap()
+            .expect("job should exist");
         assert_eq!(updated.location.as_deref(), Some("Austin, conn"));
         assert_eq!(updated.salary_range.as_deref(), Some("$150k - $175k"));
         assert_eq!(updated.notes.as_deref(), Some("Updated notes"));
@@ -205,10 +207,10 @@ mod tests {
     fn test_insert_job_event() {
         let conn = setup_test_db();
         let job = Job::new("Github", "Platform Engineer");
-        insert_job(&conn, &job).unwrap();
+        let id = insert_job(&conn, &job).unwrap();
 
         let event = JobEvent::new(
-            &job.id,
+            id,
             JobEventType::Interview,
             "Technical screen with hiring manager",
         )
@@ -221,20 +223,20 @@ mod tests {
     #[test]
     fn test_transition_job_status() {
         let mut conn = setup_test_db();
-        let job = Job::new("Shopify", "Senior Developer");
-        insert_job(&conn, &job).unwrap();
+        let mut job = Job::new("Shopify", "Senior Developer");
+        job.id = Some(insert_job(&conn, &job).unwrap());
         assert_eq!(job.status, JobStatus::Saved);
 
         let (updated_job, event) = transition_job_status(
             &mut conn,
-            &job.id,
+            job.id.expect("ID should exist"),
             JobStatus::Applied,
             "Submitted application via careers portal",
         )
         .unwrap();
 
         assert_eq!(updated_job.status, JobStatus::Applied);
-        assert_eq!(event.job_id, job.id);
+        assert_eq!(event.job_id, job.id.unwrap());
         assert_eq!(event.event_type, JobEventType::StatusChange);
         assert_eq!(event.from_status, Some(JobStatus::Saved));
         assert_eq!(event.to_status, Some(JobStatus::Applied));
@@ -244,7 +246,9 @@ mod tests {
         );
 
         // Verify state in database was updated
-        let db_job = get_job(&conn, &job.id).unwrap().expect("job should exist");
+        let db_job = get_job(&conn, job.id.unwrap())
+            .unwrap()
+            .expect("job should exist");
         assert_eq!(db_job.status, JobStatus::Applied);
     }
 
@@ -254,17 +258,13 @@ mod tests {
         let job = Job::new("Datadog", "Software Engineer");
 
         // Successful transaction commits
-        within_transaction(&mut conn, |conn| {
-            insert_job(conn, &job)?;
-            Ok(())
-        })
-        .unwrap();
+        let id = within_transaction(&mut conn, |conn| insert_job(conn, &job)).unwrap();
 
-        assert!(get_job(&conn, &job.id).unwrap().is_some());
+        assert!(get_job(&conn, id).unwrap().is_some());
 
         // Error rolls back
         let job2 = Job::new("Elastic", "Systems Engineer");
-        let result: Result<(), _> = within_transaction(&mut conn, |conn| {
+        let result: Result<i64, _> = within_transaction(&mut conn, |conn| {
             insert_job(conn, &job2)?;
             Err(DatabaseError::Io(std::io::Error::other(
                 "simulated failure",
@@ -272,6 +272,7 @@ mod tests {
         });
 
         assert!(result.is_err());
-        assert!(get_job(&conn, &job2.id).unwrap().is_none());
+        assert!(job2.id.is_none());
+        assert!(get_job(&conn, job2.id.unwrap_or(-1)).unwrap().is_none());
     }
 }

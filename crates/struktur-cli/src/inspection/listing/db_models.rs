@@ -26,7 +26,7 @@ struct JobTableRow {
 impl From<Job> for JobTableRow {
     fn from(value: Job) -> Self {
         Self {
-            id: value.id,
+            id: value.id.map(|id| format!("{id}")).unwrap_or_default(),
             company: value.company,
             role: value.role,
             status: value.status,

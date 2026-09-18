@@ -11,7 +11,7 @@ use crate::template::TemplateArchetype;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Job {
-    pub id: String,
+    pub id: Option<i64>,
     pub company: String,
     pub role: String,
     pub status: JobStatus,
@@ -32,7 +32,7 @@ impl Job {
         let now = OffsetDateTime::now_utc();
 
         Self {
-            id: uuid::Uuid::now_v7().into(),
+            id: None,
             company: company.into(),
             role: role.into(),
             status: JobStatus::default(),
@@ -106,7 +106,13 @@ impl Job {
         self.status = new_status;
         self.update_time();
 
-        JobEvent::new_status_change(&self.id, old_status, new_status, description)
+        JobEvent::new_status_change(
+            self.id
+                .expect("Job should exist with ID before status transition"),
+            old_status,
+            new_status,
+            description,
+        )
     }
 }
 
@@ -159,8 +165,8 @@ impl FromSql for JobStatus {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JobEvent {
-    pub id: String,
-    pub job_id: String,
+    pub id: Option<i64>,
+    pub job_id: i64,
     pub event_type: JobEventType,
     pub title: Option<String>,
     pub from_status: Option<JobStatus>,
@@ -174,16 +180,12 @@ pub struct JobEvent {
 }
 
 impl JobEvent {
-    pub fn new(
-        job_id: impl Into<String>,
-        event_type: JobEventType,
-        description: impl Into<String>,
-    ) -> Self {
+    pub fn new(job_id: i64, event_type: JobEventType, description: impl Into<String>) -> Self {
         let now = OffsetDateTime::now_utc();
 
         Self {
-            id: uuid::Uuid::now_v7().into(),
-            job_id: job_id.into(),
+            id: None,
+            job_id,
             event_type,
             title: None,
             from_status: None,
@@ -197,7 +199,7 @@ impl JobEvent {
     }
 
     pub fn new_status_change(
-        job_id: impl Into<String>,
+        job_id: i64,
         from: JobStatus,
         to: JobStatus,
         description: impl Into<String>,
@@ -272,8 +274,8 @@ impl FromSql for JobEventType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rendering {
-    pub id: String,
-    pub job_id: String,
+    pub id: Option<i64>,
+    pub job_id: i64,
     pub preset_name: Option<String>,
     pub output_type: TemplateArchetype,
     pub format: String,

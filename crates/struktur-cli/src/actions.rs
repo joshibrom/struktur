@@ -203,9 +203,10 @@ pub fn add_job(args: JobAddArgs) -> ActionResult {
     job.contact_email = args.contact_email;
 
     let mut conn = db::open()?;
-    db::actions::within_transaction(&mut conn, |conn| db::actions::insert_job(conn, &job))?;
+    let id =
+        db::actions::within_transaction(&mut conn, |conn| db::actions::insert_job(conn, &job))?;
 
-    println!("Added {} at {} (ID: {})", job.role, job.company, job.id);
+    println!("Added {} at {} (ID: {})", job.role, job.company, id);
 
     Ok(())
 }
