@@ -3,7 +3,8 @@
 use clap::Parser;
 
 use crate::cmd::{
-    Cli, Commands, EditCommand, EditTemplateCommand, JobCommand, ListCommand, ProfileCommand,
+    Cli, Commands, EditCommand, EditTemplateCommand, JobCommand, JobUpdateCommand, ListCommand,
+    ProfileCommand,
 };
 
 mod actions;
@@ -53,6 +54,12 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         Commands::Job(jc) => match jc {
             JobCommand::Add(args) => actions::add_job(*args),
             JobCommand::List { status } => actions::list_jobs(status),
+            JobCommand::Update { job_id, target } => match target {
+                JobUpdateCommand::Status {
+                    status,
+                    description,
+                } => actions::update_job_status(job_id, status, description),
+            },
         },
     }
 }

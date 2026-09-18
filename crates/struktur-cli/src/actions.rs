@@ -225,3 +225,51 @@ pub fn list_jobs(status_filter: Option<JobStatus>) -> ActionResult {
 
     Ok(())
 }
+
+/// Transitions the status of a tracked job application and records a status change event.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened, the job is not found, or the status transition fails.
+pub fn update_job_status(
+    job_id: i64,
+    status: JobStatus,
+    description: Option<String>,
+) -> ActionResult {
+    let mut conn = db::open()?;
+    let (job, event) = db::actions::transition_job_status(
+        &mut conn,
+        job_id,
+        status,
+        description.as_deref().unwrap_or_default(),
+    )?;
+
+    let from = event
+        .from_status
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+    let to = event
+        .to_status
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| status.to_string());
+
+    println!(
+        "Updated [{}] {} at {}: {from} -> {to}",
+        job.id.unwrap_or(job_id),
+        job.role,
+        job.company,
+    );
+
+    let event_id = event.id.map(|id| format!("#{id}")).unwrap_or_default();
+
+    match description {
+        Some(desc) if !desc.trim().is_empty() => {
+            println!("  Event {event_id} logged: \"{desc}\"");
+        }
+        _ => {
+            println!("  Event {event_id} logged");
+        }
+    }
+
+    Ok(())
+}

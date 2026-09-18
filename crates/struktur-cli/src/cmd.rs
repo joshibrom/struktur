@@ -148,6 +148,18 @@ pub enum JobCommand {
         #[arg(long, help = "Filter applications by status")]
         status: Option<JobStatus>,
     },
+
+    /// Update an existing job application record.
+    #[command(about = "Update an existing job application")]
+    Update {
+        /// Database ID of the job to update.
+        #[arg(help = "Database ID of the job to update")]
+        job_id: i64,
+
+        /// The update operation to perform.
+        #[command(subcommand)]
+        target: JobUpdateCommand,
+    },
 }
 
 /// Command-line arguments for adding a new job application.
@@ -188,4 +200,24 @@ pub struct JobAddArgs {
     /// Primary contact email address.
     #[arg(long, help = "Primary contact email address")]
     pub contact_email: Option<String>,
+}
+
+/// Subcommands specifying which attribute of a job application to update.
+#[derive(Subcommand, Debug)]
+pub enum JobUpdateCommand {
+    /// Transition the application status and record a status change event.
+    #[command(about = "Transition application status and record an event")]
+    Status {
+        /// New application status (e.g. 'saved', 'applied', 'interviewing', 'offer', 'rejected', 'withdrawn').
+        #[arg(help = "New application status")]
+        status: JobStatus,
+
+        /// Optional note or rationale explaining the status transition.
+        #[arg(
+            short,
+            long,
+            help = "Optional note or rationale for the status transition"
+        )]
+        description: Option<String>,
+    },
 }

@@ -97,7 +97,7 @@ pub fn get_job_events(conn: &rusqlite::Connection, job_id: i64) -> ActionResult<
     Ok(events)
 }
 
-pub fn insert_job_event(conn: &rusqlite::Connection, job_event: &JobEvent) -> ActionResult<()> {
+pub fn insert_job_event(conn: &rusqlite::Connection, job_event: &JobEvent) -> ActionResult<i64> {
     conn.execute(
         "INSERT INTO job_events
         (job_id, event_type, title, from_status, to_status, contact_name, contact_email, description, event_date, created_at)
@@ -114,7 +114,7 @@ pub fn insert_job_event(conn: &rusqlite::Connection, job_event: &JobEvent) -> Ac
             job_event.event_date,
             job_event.created_at,
         ])?;
-    Ok(())
+    Ok(conn.last_insert_rowid())
 }
 
 pub fn transition_job_status(
@@ -126,10 +126,10 @@ pub fn transition_job_status(
     let conn = conn.transaction()?;
 
     let mut job = get_job(&conn, job_id)?.ok_or(rusqlite::Error::QueryReturnedNoRows)?;
-    let event = job.transition_status(new_status, description);
+    let mut event = job.transition_status(new_status, description);
 
     update_job(&conn, &job)?;
-    insert_job_event(&conn, &event)?;
+    event.id = Some(insert_job_event(&conn, &event)?);
 
     conn.commit()?;
     Ok((job, event))
