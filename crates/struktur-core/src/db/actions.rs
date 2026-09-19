@@ -2,7 +2,7 @@ use rusqlite::{OptionalExtension, params};
 
 use crate::db::{
     DatabaseError,
-    models::{Job, JobEvent, JobStatus},
+    models::{Job, JobEvent, JobStatus, Rendering},
 };
 
 pub type ActionResult<T> = Result<T, DatabaseError>;
@@ -135,10 +135,41 @@ pub fn transition_job_status(
     Ok((job, event))
 }
 
+pub fn insert_rendering(conn: &rusqlite::Connection, rendering: &Rendering) -> ActionResult<i64> {
+    conn.execute(
+        "INSERT INTO renderings
+        (job_id, preset_name, output_type, format, rendered_text, context, created_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            rendering.job_id,
+            rendering.preset_name,
+            rendering.output_type,
+            rendering.format,
+            rendering.rendered_text,
+            rendering.context,
+            rendering.created_at
+        ],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn get_renderings_for_job(
+    conn: &rusqlite::Connection,
+    job_id: i64,
+) -> ActionResult<Vec<Rendering>> {
+    let mut stmt =
+        conn.prepare("SELECT * FROM renderings WHERE job_id = ?1 ORDER BY created_at DESC")?;
+    let renderings = stmt
+        .query_map(params![job_id], |row| row.try_into())?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(renderings)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::db::models::JobEventType;
+    use crate::template::TemplateArchetype;
     use time::OffsetDateTime;
 
     fn setup_test_db() -> rusqlite::Connection {
@@ -274,5 +305,43 @@ mod tests {
         assert!(result.is_err());
         assert!(job2.id.is_none());
         assert!(get_job(&conn, job2.id.unwrap_or(-1)).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_insert_and_get_rendering() {
+        let conn = setup_test_db();
+        let job = Job::new("Shopify", "Senior Developer");
+        let job_id = insert_job(&conn, &job).unwrap();
+
+        let context = serde_json::json!({
+            "role": "Senior Developer",
+            "company": "Shopify"
+        });
+
+        let rendering = Rendering::new(
+            job_id,
+            TemplateArchetype::CoverLetter,
+            "plaintext",
+            "Dear Hiring Team...",
+            &context,
+        )
+        .with_preset("backend");
+
+        let rendering_id = insert_rendering(&conn, &rendering).unwrap();
+        assert!(rendering_id > 0);
+
+        let renderings = get_renderings_for_job(&conn, job_id).unwrap();
+        assert_eq!(renderings.len(), 1);
+        assert_eq!(renderings[0].id, Some(rendering_id));
+        assert_eq!(renderings[0].job_id, job_id);
+        assert_eq!(renderings[0].preset_name.as_deref(), Some("backend"));
+        assert_eq!(renderings[0].output_type, TemplateArchetype::CoverLetter);
+        assert_eq!(renderings[0].format, "plaintext");
+        assert_eq!(renderings[0].rendered_text, "Dear Hiring Team...");
+        assert!(renderings[0].context.contains("Shopify"));
+
+        // Querying for an unrelated job returns an empty list
+        let empty = get_renderings_for_job(&conn, 999).unwrap();
+        assert!(empty.is_empty());
     }
 }

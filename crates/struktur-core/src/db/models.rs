@@ -2,6 +2,7 @@ use rusqlite::{
     ToSql,
     types::{FromSql, FromSqlError, ToSqlOutput},
 };
+use serde::Serialize;
 use strum::{Display as StrumDisplay, EnumString};
 use time::OffsetDateTime;
 
@@ -282,4 +283,49 @@ pub struct Rendering {
     pub rendered_text: String,
     pub context: String,
     pub created_at: OffsetDateTime,
+}
+
+impl Rendering {
+    pub fn new(
+        job_id: i64,
+        output_type: TemplateArchetype,
+        format: impl Into<String>,
+        rendered_text: impl Into<String>,
+        context: impl Serialize,
+    ) -> Self {
+        let now = OffsetDateTime::now_utc();
+
+        Self {
+            id: None,
+            job_id,
+            preset_name: None,
+            output_type,
+            format: format.into(),
+            rendered_text: rendered_text.into(),
+            context: serde_json::to_string(&context).unwrap_or_default(),
+            created_at: now,
+        }
+    }
+
+    pub fn with_preset(mut self, preset_name: impl Into<String>) -> Self {
+        self.preset_name = Some(preset_name.into());
+        self
+    }
+}
+
+impl TryFrom<&rusqlite::Row<'_>> for Rendering {
+    type Error = rusqlite::Error;
+
+    fn try_from(row: &rusqlite::Row<'_>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: row.get("id")?,
+            job_id: row.get("job_id")?,
+            preset_name: row.get("preset_name")?,
+            output_type: row.get("output_type")?,
+            format: row.get("format")?,
+            rendered_text: row.get("rendered_text")?,
+            context: row.get("context")?,
+            created_at: row.get("created_at")?,
+        })
+    }
 }
