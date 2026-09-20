@@ -49,8 +49,8 @@ To enforce loose coupling and maintain clear boundaries, the codebase is partiti
 
 | Crate | Responsibility | Dependencies |
 | :--- | :--- | :--- |
-| **`struktur-core`** | Domain models, schema validation, persistence traits, template rendering, Typst compilation, and LLM integrations. Contains no CLI or UI dependencies. | `serde`, `toml`, `directories` |
-| **`struktur-cli`** | Command-line interface providing subcommands (`init`, `generate`, `list`, `profile`, `status`). Suitable for scripting and quick operations. | `struktur-core`, `clap` |
+| **`struktur-core`** | Domain models, schema validation, persistence traits, template rendering, SQLite tracking engine & migrations, Typst compilation, and LLM integrations. Contains no CLI or UI dependencies. | `serde`, `toml`, `directories`, `rusqlite`, `time` |
+| **`struktur-cli`** | Command-line interface providing subcommands (`init`, `generate`, `list`, `profile`, `status`, `edit`, `validate`, `job`). Suitable for scripting and quick operations. | `struktur-core`, `clap` |
 | **`struktur-tui`** *(Planned)* | Interactive terminal user interface for managing job applications, browsing tailored drafts, and status board tracking. | `struktur-core`, `ratatui`, `crossterm` |
 
 ---
@@ -161,19 +161,69 @@ Paths are resolved using standard platform conventions via the `directories` cra
 
 ---
 
-## 6. Local Job Application Tracking (SQLite) *(Target Design)*
+## 6. Local Job Application Tracking (SQLite Integration)
 
-Application tracking will be implemented using an embedded SQLite database (`jobs.db`) stored in the local data directory.
+Application tracking is implemented using an embedded SQLite database (`jobs.db`) stored in the local XDG data directory (`~/.local/share/struktur/jobs.db`).
 
-### Status State Machine
+### 6.1 Database Schema & Relational Design
+
+The schema enforces relational integrity with foreign keys enabled (`PRAGMA foreign_keys = ON;`) and cascading deletes:
+
 ```text
-[ Saved / Draft ] ──> [ Applied ] ──> [ Interviewing ] ──> [ Offer / Rejected / Withdrawn ]
+┌───────────────────────────────┐
+│             jobs              │
+├───────────────────────────────┤
+│ id: INTEGER PRIMARY KEY       │
+│ company: TEXT NOT NULL        │
+│ role: TEXT NOT NULL           │
+│ status: TEXT NOT NULL         │
+│ location: TEXT                │
+│ salary_range: TEXT            │
+│ job_url: TEXT                 │
+│ notes: TEXT                   │
+│ contact_name: TEXT            │
+│ contact_email: TEXT           │
+│ date_applied: TEXT (ISO 8601) │
+│ created_at: TEXT (ISO 8601)   │
+│ updated_at: TEXT (ISO 8601)   │
+└───────────────┬───────────────┘
+                │
+        1:N     │ ON DELETE CASCADE
+        ┌───────┴───────────────────────┐
+        ▼                               ▼
+┌───────────────────────────────┐ ┌───────────────────────────────┐
+│          job_events           │ │          renderings           │
+├───────────────────────────────┤ ├───────────────────────────────┤
+│ id: INTEGER PRIMARY KEY       │ │ id: INTEGER PRIMARY KEY       │
+│ job_id: INTEGER NOT NULL (FK) │ │ job_id: INTEGER NOT NULL (FK) │
+│ event_type: TEXT NOT NULL     │ │ archetype: TEXT NOT NULL      │
+│ from_status: TEXT             │ │ format: TEXT NOT NULL         │
+│ to_status: TEXT               │ │ content: TEXT NOT NULL        │
+│ notes: TEXT NOT NULL          │ │ preset_name: TEXT             │
+│ created_at: TEXT (ISO 8601)   │ │ context_json: TEXT NOT NULL   │
+└───────────────────────────────┘ │ created_at: TEXT (ISO 8601)   │
+                                  └───────────────────────────────┘
 ```
 
-### Key Tracked Entities
-* **Job Record**: Company, role, job post URL, location, salary range, status, applied date.
-* **Document Snapshot**: Foreign key link or snapshot of the exact preset, bullets, and generated letter used for the application.
-* **Activity Log / Notes**: Interview rounds, recruiter contact information, and follow-up deadlines.
+### 6.2 Status State Machine & Automatic Invariants
+
+Job records transition through a defined lifecycle:
+
+```text
+[ Saved ] ──> [ Applied ] ──> [ Interviewing ] ──> [ Offer / Rejected / Withdrawn ]
+```
+
+* **Automatic Application Date**: When a job transitions to `Applied` (either at initial creation or via status update), `date_applied` is automatically populated with the current UTC timestamp if not already set.
+* **Audit Timeline**: Every status change atomically commits a `JobEvent` row with old/new states, timestamps, and optional user notes.
+* **Update Timestamps**: Granular updates to any field (`company`, `role`, `status`, `location`, `salary`, `url`, `notes`, `contact`) touch `updated_at`.
+
+### 6.3 Document Snapshots
+
+When generating tailored application materials linked to a tracked job (`struktur job generate <id> --preset <preset>`), the exact rendered document, preset name, archetype, and serialized template context JSON are saved into the `renderings` table. This creates a permanent, immutable record of what was submitted for each role.
+
+### 6.4 Schema Migrations
+
+Database migrations are managed via a lightweight, idempotent migration runner using SQLite's `PRAGMA user_version`. Migration scripts are embedded directly into the binary at compile time via `include_str!` and executed in order on database connection.
 
 ---
 
