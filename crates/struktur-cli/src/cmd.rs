@@ -141,9 +141,14 @@ pub enum JobCommand {
     #[command(about = "Add a new job application to track")]
     Add(Box<JobAddArgs>),
 
-    #[command(alias = "gen")]
+    /// Generate tailored application materials for a tracked job and record a document snapshot.
+    #[command(
+        alias = "gen",
+        about = "Generate tailored application materials for a job"
+    )]
     Generate {
-        #[arg()]
+        /// Database ID of the target job application.
+        #[arg(help = "Database ID of the target job application")]
         job_id: i64,
 
         /// ID of the preset to use (e.g. "backend").

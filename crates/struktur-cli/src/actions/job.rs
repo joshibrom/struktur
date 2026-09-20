@@ -1,11 +1,7 @@
-use struktur_core::{
-    db::{
-        self,
-        models::{Job, JobEventType, JobStatus, Rendering},
-    },
-    template::{RenderableTemplate, cover_letter::plaintext::PlaintextTemplate},
+use struktur_core::db::{
+    self,
+    models::{Job, JobEventType, JobStatus},
 };
-use time::OffsetDateTime;
 
 use crate::{cmd::JobAddArgs, helpers::OutputPath, inspection};
 
@@ -320,7 +316,7 @@ pub fn show(job_id: i64) -> ActionResult {
         }
     } else {
         println!(
-            "  (No documents generated yet. Run 'struktur generate ... --job {job_id}' to link one)"
+            "  (No documents generated yet. Run 'struktur job generate {job_id} --preset <preset>' to link one)"
         );
     }
 
@@ -348,6 +344,11 @@ pub fn delete(job_id: i64) -> ActionResult {
     Ok(())
 }
 
+/// Generates tailored application materials for a tracked job and saves the document snapshot.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened, the job is not found, or document generation fails.
 pub fn generate(
     job_id: i64,
     preset: String,
@@ -356,34 +357,20 @@ pub fn generate(
 ) -> ActionResult {
     let conn = db::open()?;
     let job = db::actions::get_job(&conn, job_id)?
-        .ok_or(anyhow::anyhow!("job with id {job_id} not found"))?;
+        .ok_or(anyhow::anyhow!("Job with ID {job_id} not found"))?;
 
-    let application_date = date.unwrap_or(
+    let application_date = date.unwrap_or_else(|| {
         job.date_applied
-            .unwrap_or(OffsetDateTime::now_utc())
-            .date()
-            .to_string(),
-    );
+            .map(|dt| dt.date().to_string())
+            .unwrap_or_else(crate::helpers::today_as_string)
+    });
 
-    // TODO: Make all this more dynamic with different templates and the like
-    let (content, context) = super::generate::generate_plaintext_cover_letter(
+    super::generate::generate(
         preset,
         job.company,
         job.role,
         application_date,
         output_path,
-    )?;
-
-    // TODO: Make all this more dynamic with different templates and the like
-    let rendering = Rendering::new(
-        job.id.expect("job id should exist"),
-        PlaintextTemplate::get_archetype(),
-        "plaintext",
-        content,
-        context,
-    );
-
-    db::actions::insert_rendering(&conn, &rendering)?;
-
-    Ok(())
+        Some(job_id),
+    )
 }

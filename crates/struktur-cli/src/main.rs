@@ -33,6 +33,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
             role,
             date.unwrap_or(helpers::today_as_string()),
             helpers::OutputPath::from_cmd_args(output, clipboard),
+            None,
         ),
         Commands::Status => actions::system::get_status(),
         Commands::Validate => actions::system::validate(),
