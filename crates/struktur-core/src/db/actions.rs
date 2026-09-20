@@ -267,6 +267,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(updated_job.status, JobStatus::Applied);
+        assert!(updated_job.date_applied.is_some());
         assert_eq!(event.job_id, job.id.unwrap());
         assert_eq!(event.event_type, JobEventType::StatusChange);
         assert_eq!(event.from_status, Some(JobStatus::Saved));
@@ -281,6 +282,8 @@ mod tests {
             .unwrap()
             .expect("job should exist");
         assert_eq!(db_job.status, JobStatus::Applied);
+        assert!(db_job.date_applied.is_some());
+        assert_eq!(db_job.date_applied, updated_job.date_applied);
     }
 
     #[test]

@@ -108,6 +108,10 @@ impl Job {
         self.status = new_status;
         self.update_time();
 
+        if new_status == JobStatus::Applied && self.date_applied.is_none() {
+            self.date_applied = Some(OffsetDateTime::now_utc());
+        }
+
         JobEvent::new_status_change(
             self.id
                 .expect("Job should exist with ID before status transition"),
