@@ -94,7 +94,8 @@ impl Job {
         self
     }
 
-    fn update_time(&mut self) {
+    /// Updates the `updated_at` timestamp to the current UTC time.
+    pub fn update_time(&mut self) {
         self.updated_at = OffsetDateTime::now_utc();
     }
 

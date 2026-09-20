@@ -213,6 +213,22 @@ pub struct JobAddArgs {
 /// Subcommands specifying which attribute of a job application to update.
 #[derive(Subcommand, Debug)]
 pub enum JobUpdateCommand {
+    /// Update the company or organization name.
+    #[command(about = "Update the company name")]
+    Company {
+        /// New company or organization name.
+        #[arg(help = "New company name")]
+        name: String,
+    },
+
+    /// Update the job role or position title.
+    #[command(about = "Update the job role or position title")]
+    Role {
+        /// New job role or position title.
+        #[arg(help = "New job role or title")]
+        name: String,
+    },
+
     /// Transition the application status and record a status change event.
     #[command(about = "Transition application status and record an event")]
     Status {
@@ -227,5 +243,49 @@ pub enum JobUpdateCommand {
             help = "Optional note or rationale for the status transition"
         )]
         description: Option<String>,
+    },
+
+    /// Update the job location or work arrangement.
+    #[command(about = "Update the job location or work arrangement")]
+    Location {
+        /// New job location or work arrangement (e.g. 'Remote', 'New York, NY', 'Hybrid').
+        #[arg(help = "New job location or work arrangement")]
+        location: String,
+    },
+
+    /// Update the target salary or compensation range.
+    #[command(about = "Update the salary or compensation range")]
+    Salary {
+        /// New salary or compensation range (e.g. '$150k - $180k').
+        #[arg(help = "New salary or compensation range")]
+        salary: String,
+    },
+
+    /// Update the URL to the job posting.
+    #[command(about = "Update the URL to the job posting")]
+    Url {
+        /// New URL to the job posting.
+        #[arg(help = "New job posting URL")]
+        url: String,
+    },
+
+    /// Update notes or referral details.
+    #[command(about = "Update notes or referral details")]
+    Notes {
+        /// New notes or referral details.
+        #[arg(help = "New notes or referral details")]
+        notes: String,
+    },
+
+    /// Update primary recruiter, hiring manager, or referral contact information.
+    #[command(about = "Update primary contact details")]
+    Contact {
+        /// Primary contact name.
+        #[arg(short, long, help = "Primary recruiter or contact name")]
+        name: Option<String>,
+
+        /// Primary contact email address.
+        #[arg(short, long, help = "Primary contact email address")]
+        email: Option<String>,
     },
 }

@@ -98,10 +98,127 @@ pub fn update_status(job_id: i64, status: JobStatus, description: Option<String>
     Ok(())
 }
 
+/// Updates the company name for an existing job application.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened, the job is not found, or the update fails.
+pub fn update_company(job_id: i64, company: String) -> ActionResult {
+    let conn = db::open()?;
+    let mut job = db::actions::get_job(&conn, job_id)?
+        .ok_or(anyhow::anyhow!("Job with ID {job_id} not found"))?;
+    job.company = company.clone();
+    job.update_time();
+    db::actions::update_job(&conn, &job)?;
+    println!("Updated company to '{company}' for job [#{job_id}].");
+    Ok(())
+}
+
+/// Updates the job role or position title for an existing job application.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened, the job is not found, or the update fails.
+pub fn update_role(job_id: i64, role: String) -> ActionResult {
+    let conn = db::open()?;
+    let mut job = db::actions::get_job(&conn, job_id)?
+        .ok_or(anyhow::anyhow!("Job with ID {job_id} not found"))?;
+    job.role = role.clone();
+    job.update_time();
+    db::actions::update_job(&conn, &job)?;
+    println!("Updated role to '{role}' for job [#{job_id}].");
+    Ok(())
+}
+
+/// Updates the work location or arrangement for an existing job application.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened, the job is not found, or the update fails.
+pub fn update_location(job_id: i64, location: String) -> ActionResult {
+    let conn = db::open()?;
+    let mut job = db::actions::get_job(&conn, job_id)?
+        .ok_or(anyhow::anyhow!("Job with ID {job_id} not found"))?;
+    job.location = Some(location.clone());
+    job.update_time();
+    db::actions::update_job(&conn, &job)?;
+    println!("Updated location to '{location}' for job [#{job_id}].");
+    Ok(())
+}
+
+/// Updates the target salary or compensation range for an existing job application.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened, the job is not found, or the update fails.
+pub fn update_salary(job_id: i64, salary: String) -> ActionResult {
+    let conn = db::open()?;
+    let mut job = db::actions::get_job(&conn, job_id)?
+        .ok_or(anyhow::anyhow!("Job with ID {job_id} not found"))?;
+    job.salary_range = Some(salary.clone());
+    job.update_time();
+    db::actions::update_job(&conn, &job)?;
+    println!("Updated salary range to '{salary}' for job [#{job_id}].");
+    Ok(())
+}
+
+/// Updates the job posting URL for an existing job application.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened, the job is not found, or the update fails.
+pub fn update_url(job_id: i64, url: String) -> ActionResult {
+    let conn = db::open()?;
+    let mut job = db::actions::get_job(&conn, job_id)?
+        .ok_or(anyhow::anyhow!("Job with ID {job_id} not found"))?;
+    job.job_url = Some(url);
+    job.update_time();
+    db::actions::update_job(&conn, &job)?;
+    println!("Updated job URL for job [#{job_id}].");
+    Ok(())
+}
+
+/// Updates notes or referral details for an existing job application.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened, the job is not found, or the update fails.
+pub fn update_notes(job_id: i64, notes: String) -> ActionResult {
+    let conn = db::open()?;
+    let mut job = db::actions::get_job(&conn, job_id)?
+        .ok_or(anyhow::anyhow!("Job with ID {job_id} not found"))?;
+    job.notes = Some(notes);
+    job.update_time();
+    db::actions::update_job(&conn, &job)?;
+    println!("Updated notes for job [#{job_id}].");
+    Ok(())
+}
+
+/// Updates the primary recruiter, hiring manager, or referral contact for an existing job application.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened, the job is not found, or the update fails.
+pub fn update_contact(job_id: i64, name: Option<String>, email: Option<String>) -> ActionResult {
+    let conn = db::open()?;
+    let mut job = db::actions::get_job(&conn, job_id)?
+        .ok_or(anyhow::anyhow!("Job with ID {job_id} not found"))?;
+    job = job.with_contact(name, email);
+    job.update_time();
+    db::actions::update_job(&conn, &job)?;
+    println!("Updated contact details for job [#{job_id}].");
+    Ok(())
+}
+
+/// Displays comprehensive details, event history timeline, and linked document snapshots for a job application.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened or if the job is not found.
 pub fn show(job_id: i64) -> ActionResult {
     let conn = db::open()?;
     let job = db::actions::get_job(&conn, job_id)?
-        .ok_or(anyhow::anyhow!("Job with ID {job_id} not found"))?;
+        .ok_or(anyhow::anyhow!("job with id {job_id} not found"))?;
     let events = db::actions::get_job_events(&conn, job_id)?;
     let renders = db::actions::get_renderings_for_job(&conn, job_id)?;
 
