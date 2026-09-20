@@ -73,6 +73,18 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
                 }
             },
             JobCommand::Rm { job_id } => actions::job::delete(job_id),
+            JobCommand::Generate {
+                job_id,
+                preset,
+                date,
+                output,
+                clipboard,
+            } => actions::job::generate(
+                job_id,
+                preset,
+                date,
+                helpers::OutputPath::from_cmd_args(output, clipboard),
+            ),
         },
     }
 }

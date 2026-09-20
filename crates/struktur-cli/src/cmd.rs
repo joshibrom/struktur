@@ -141,6 +141,28 @@ pub enum JobCommand {
     #[command(about = "Add a new job application to track")]
     Add(Box<JobAddArgs>),
 
+    #[command(alias = "gen")]
+    Generate {
+        #[arg()]
+        job_id: i64,
+
+        /// ID of the preset to use (e.g. "backend").
+        #[arg(long, help = "ID of the role preset to use")]
+        preset: String,
+
+        /// Application date (defaults to today's date if omitted).
+        #[arg(long, help = "Application date (defaults to current date if omitted)")]
+        date: Option<String>,
+
+        /// Optional file path to write the generated document to.
+        #[arg(short, long, help = "Write output to the specified file path")]
+        output: Option<PathBuf>,
+
+        /// Copy the generated document directly to the system clipboard.
+        #[arg(short, long, help = "Copy output to the system clipboard")]
+        clipboard: bool,
+    },
+
     /// List job applications in a table.
     #[command(about = "List tracked job applications")]
     List {

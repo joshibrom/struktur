@@ -58,3 +58,26 @@ pub fn edit_cover_letter_template() -> ActionResult {
 pub fn edit_cv_template() -> ActionResult {
     edit_template::<PlaintextCvTemplate>()
 }
+
+pub fn generate_plaintext_cover_letter(
+    preset_name: String,
+    company: String,
+    role: String,
+    date: String,
+    output_path: OutputPath,
+) -> anyhow::Result<(String, CoverLetterTemplateContext)> {
+    let config = UserConfig::load()?;
+    let profile = Profile::load()?;
+
+    let preset = config
+        .presets
+        .get(&preset_name)
+        .ok_or(anyhow::anyhow!("Unknown preset: {preset_name}"))?;
+
+    let context = CoverLetterTemplateContext::new(role, company, date, profile, preset, &config)?;
+
+    let content = PlaintextTemplate::render(&context)?;
+
+    output_path.output(&content, OutputContentType::CoverLetter)?;
+    Ok((content, context))
+}

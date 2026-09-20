@@ -1,9 +1,13 @@
-use struktur_core::db::{
-    self,
-    models::{Job, JobEventType, JobStatus},
+use struktur_core::{
+    db::{
+        self,
+        models::{Job, JobEventType, JobStatus, Rendering},
+    },
+    template::{RenderableTemplate, cover_letter::plaintext::PlaintextTemplate},
 };
+use time::OffsetDateTime;
 
-use crate::{cmd::JobAddArgs, inspection};
+use crate::{cmd::JobAddArgs, helpers::OutputPath, inspection};
 
 use super::ActionResult;
 
@@ -340,6 +344,46 @@ pub fn delete(job_id: i64) -> ActionResult {
     } else {
         anyhow::bail!("Job with ID #{job_id} does not exist.");
     }
+
+    Ok(())
+}
+
+pub fn generate(
+    job_id: i64,
+    preset: String,
+    date: Option<String>,
+    output_path: OutputPath,
+) -> ActionResult {
+    let conn = db::open()?;
+    let job = db::actions::get_job(&conn, job_id)?
+        .ok_or(anyhow::anyhow!("job with id {job_id} not found"))?;
+
+    let application_date = date.unwrap_or(
+        job.date_applied
+            .unwrap_or(OffsetDateTime::now_utc())
+            .date()
+            .to_string(),
+    );
+
+    // TODO: Make all this more dynamic with different templates and the like
+    let (content, context) = super::generate::generate_plaintext_cover_letter(
+        preset,
+        job.company,
+        job.role,
+        application_date,
+        output_path,
+    )?;
+
+    // TODO: Make all this more dynamic with different templates and the like
+    let rendering = Rendering::new(
+        job.id.expect("job id should exist"),
+        PlaintextTemplate::get_archetype(),
+        "plaintext",
+        content,
+        context,
+    );
+
+    db::actions::insert_rendering(&conn, &rendering)?;
 
     Ok(())
 }
