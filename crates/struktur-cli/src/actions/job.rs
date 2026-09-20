@@ -1,6 +1,6 @@
 use struktur_core::db::{
     self,
-    models::{Job, JobStatus},
+    models::{Job, JobEventType, JobStatus},
 };
 
 use crate::{cmd::JobAddArgs, inspection};
@@ -94,6 +94,116 @@ pub fn update_status(job_id: i64, status: JobStatus, description: Option<String>
             println!("  Event {event_id} logged");
         }
     }
+
+    Ok(())
+}
+
+pub fn show(job_id: i64) -> ActionResult {
+    let conn = db::open()?;
+    let job = db::actions::get_job(&conn, job_id)?
+        .ok_or(anyhow::anyhow!("Job with ID {job_id} not found"))?;
+    let events = db::actions::get_job_events(&conn, job_id)?;
+    let renders = db::actions::get_renderings_for_job(&conn, job_id)?;
+
+    let full_sep = "=".repeat(80);
+    let half_sep = "-".repeat(80);
+
+    println!(
+        "[#{}] {} at {}",
+        job.id.unwrap_or_default(),
+        job.role,
+        job.company
+    );
+    println!("{full_sep}");
+
+    let job_fields = [
+        ("Status", job.status.to_string()),
+        (
+            "Applied",
+            job.date_applied
+                .map(|dt| dt.date().to_string())
+                .unwrap_or_default(),
+        ),
+        ("Location", job.location.clone().unwrap_or_default()),
+        ("Salary", job.salary_range.clone().unwrap_or_default()),
+        ("Job URL", job.job_url.clone().unwrap_or_default()),
+        ("Contact", job.get_contact_reference().unwrap_or_default()),
+        ("Notes", job.notes.unwrap_or_default()),
+    ];
+
+    for (col, val) in job_fields {
+        if !val.is_empty() {
+            println!("{:<13} {}", format!("{col}:"), val);
+        }
+    }
+
+    println!("\nTIMELINE ({} events)", events.len());
+    println!("{half_sep}");
+
+    if !events.is_empty() {
+        for event in &events {
+            let tagline = match &event.event_type {
+                &JobEventType::StatusChange => format!(
+                    "{} -> {}",
+                    event
+                        .from_status
+                        .map(|status| status.to_string())
+                        .unwrap_or_default(),
+                    event
+                        .to_status
+                        .map(|status| status.to_string())
+                        .unwrap_or_default()
+                ),
+                _ => event.title.clone().unwrap_or_default(),
+            };
+            const DATE_WIDTH: usize = 11;
+            const TYPE_WIDTH: usize = 14;
+            println!(
+                "- {:<DATE_WIDTH$} {:<TYPE_WIDTH$} {}",
+                event.event_date.date().to_string(),
+                event.event_type.to_string(),
+                tagline
+            );
+            if !event.description.trim().is_empty() {
+                println!(
+                    "  {:<prefix_width$} {}\n",
+                    ' ',
+                    event.description,
+                    prefix_width = DATE_WIDTH + TYPE_WIDTH + 1
+                );
+            }
+        }
+    } else {
+        println!("  (No events found for this job)")
+    }
+
+    println!("\nDOCUMENTS ({} renderings)", renders.len());
+    println!("{half_sep}");
+
+    if !renders.is_empty() {
+        for render in &renders {
+            let render_id = render.id.map(|id| format!("#{id}")).unwrap_or_default();
+            let preset = render
+                .preset_name
+                .as_deref()
+                .map(|p| format!("[{p}]"))
+                .unwrap_or_default();
+            println!(
+                "  {:<4} {:<14} {:<12} ({})  {}",
+                render_id,
+                render.output_type.to_string(),
+                preset,
+                render.format,
+                render.created_at.date(),
+            );
+        }
+    } else {
+        println!(
+            "  (No documents generated yet. Run 'struktur generate ... --job {job_id}' to link one)"
+        );
+    }
+
+    println!("{full_sep}");
 
     Ok(())
 }

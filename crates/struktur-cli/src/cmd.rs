@@ -149,6 +149,14 @@ pub enum JobCommand {
         status: Option<JobStatus>,
     },
 
+    /// Display detailed information, timeline, and documents for a job application.
+    #[command(about = "Display detailed information and timeline for a job application")]
+    Show {
+        /// Database ID of the job to inspect.
+        #[arg(help = "Database ID of the job to inspect")]
+        job_id: i64,
+    },
+
     /// Update an existing job application record.
     #[command(about = "Update an existing job application")]
     Update {

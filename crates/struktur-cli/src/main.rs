@@ -54,6 +54,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         Commands::Job(jc) => match jc {
             JobCommand::Add(args) => actions::job::add(*args),
             JobCommand::List { status } => actions::job::list_all(status),
+            JobCommand::Show { job_id } => actions::job::show(job_id),
             JobCommand::Update { job_id, target } => match target {
                 JobUpdateCommand::Status {
                     status,

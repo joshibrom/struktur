@@ -115,6 +115,16 @@ impl Job {
             description,
         )
     }
+
+    pub fn get_contact_reference(&self) -> Option<String> {
+        match &self.contact_name {
+            Some(name) => match &self.contact_email {
+                Some(email) => Some(format!("{name} <{email}>")),
+                None => Some(name.to_owned()),
+            },
+            None => self.contact_email.as_ref().map(|email| email.to_owned()),
+        }
+    }
 }
 
 impl TryFrom<&rusqlite::Row<'_>> for Job {
