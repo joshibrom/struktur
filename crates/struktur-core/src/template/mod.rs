@@ -4,8 +4,14 @@
 //! within preset hooks, and compiling documents via the [`RenderableTemplate`] trait.
 
 use std::io::Write;
+use std::str::FromStr;
 
+use rusqlite::{
+    ToSql,
+    types::{FromSql, FromSqlError, ToSqlOutput},
+};
 use serde::Serialize;
+use strum::{Display as StrumDisplay, EnumString};
 use tera::Tera;
 
 pub mod cover_letter;
@@ -32,12 +38,26 @@ pub enum TemplateError {
 }
 
 /// High-level document category defining template directory structure and semantic role.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(StrumDisplay, EnumString, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[strum(serialize_all = "snake_case")]
 pub enum TemplateArchetype {
     /// Curriculum Vitae or comprehensive candidate resume.
     Cv,
     /// Tailored job application cover letter.
     CoverLetter,
+}
+
+impl ToSql for TemplateArchetype {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(self.to_string()))
+    }
+}
+
+impl FromSql for TemplateArchetype {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        let text = value.as_str()?;
+        Self::from_str(text).map_err(|err| FromSqlError::Other(Box::new(err)))
+    }
 }
 
 impl TemplateArchetype {

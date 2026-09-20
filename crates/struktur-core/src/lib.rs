@@ -30,6 +30,7 @@
 //! ```
 
 pub mod config;
+pub mod db;
 pub mod profile;
 pub mod storage;
 pub mod template;

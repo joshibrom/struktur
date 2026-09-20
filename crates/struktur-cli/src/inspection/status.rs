@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use struktur_core::{
     config::UserConfig,
+    db,
     profile::Profile,
     storage::document::Document,
     template::{
@@ -56,11 +57,22 @@ fn check_template<T: RenderableTemplate>() -> FileCheck {
     }
 }
 
+fn check_database() -> FileCheck {
+    let path = db::get_path().ok();
+    let exists = path.as_ref().map(|p| p.exists()).unwrap_or(false);
+    FileCheck {
+        name: db::DATABASE_FILE_NAME,
+        path,
+        exists,
+    }
+}
+
 pub fn check() -> Vec<FileCheck> {
     vec![
         check_document::<UserConfig>(),
         check_document::<Profile>(),
         check_template::<PlaintextTemplate>(),
         check_template::<PlaintextCvTemplate>(),
+        check_database(),
     ]
 }

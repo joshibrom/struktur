@@ -15,7 +15,7 @@ A local-first CLI and terminal workstation for generating tailored job applicati
   * *Deterministic Mode*: Fast template-based assembly using dynamic variable interpolation (`{{ role }}`, `{{ company }}`). Supports output to terminal stdout, file writing, or system clipboard.
   * *LLM-Assisted Mode* (Planned): AI-augmented drafting for generating multiple tailored variations for review.
 * **Typst-Powered PDF Export* (Planned): High-performance, reproducible PDF document compilation via Typst without heavy TeX distributions.
-* **Local Application Tracking** (Planned): Built-in SQLite database to track job applications, submission dates, notes, and the exact materials used.
+* **Local Application Tracking**: Built-in SQLite database with schema migrations to track job applications, submission dates, pipeline statuses, notes, timeline events, and historical document snapshots.
 * **Multi-Interface Design**: Scriptable CLI for automation and an interactive [Ratatui](https://github.com/ratatui/ratatui) TUI (Planned) for managing applications and drafting.
 
 ---
@@ -112,6 +112,36 @@ cargo run -p struktur-cli -- generate --preset backend --company Stripe --role "
 
 # Save directly to a file
 cargo run -p struktur-cli -- generate --preset backend --company Stripe --role "Senior Backend Engineer" --output cover_letter.txt
+```
+
+### Tracking Job Applications & Pipeline Management
+
+Track and advance applications through the hiring pipeline, linking tailored documents to job records:
+
+```bash
+# Add a new job application (optional fields: --location, --salary, --url, --contact-name, --notes, --status)
+cargo run -p struktur-cli -- job add --company "Acme Corp" --role "Backend Engineer" --location Remote --status saved
+
+# List tracked applications in a terminal table (optionally filter by status)
+cargo run -p struktur-cli -- job list
+cargo run -p struktur-cli -- job list --status applied
+
+# View detailed job info, chronological status change timeline, and document snapshots
+cargo run -p struktur-cli -- job show 1
+
+# Advance application status (records a timeline event and automatically sets date_applied on 'applied')
+cargo run -p struktur-cli -- job update 1 status applied --description "Submitted via company careers portal"
+cargo run -p struktur-cli -- job update 1 status interviewing --description "Initial recruiter screen scheduled"
+
+# Update specific job fields
+cargo run -p struktur-cli -- job update 1 salary "$160k - $185k"
+cargo run -p struktur-cli -- job update 1 contact --name "Jane Smith" --email "jane@acme.example"
+
+# Generate tailored document using job details and automatically record a document snapshot
+cargo run -p struktur-cli -- job generate 1 --preset backend
+
+# Delete a job record and all cascaded timeline events and document snapshots
+cargo run -p struktur-cli -- job rm 1
 ```
 
 ---

@@ -16,10 +16,10 @@ This roadmap outlines the phased development plan for `struktur`, tracking compl
 [ Phase 3: CLI Inspection & Mgmt ]    ✅ Completed
              │
              ▼
-[ Phase 4: SQLite Job Tracker ]       🔄 Next Milestone
+[ Phase 4: SQLite Job Tracker ]       ✅ Completed
              │
              ▼
-[ Phase 5: Typst PDF Generation ]     ⏳ Planned
+[ Phase 5: Typst PDF Generation ]     🔄 Next Milestone
              │
              ▼
 [ Phase 6: LLM Generation Layer ]     ⏳ Planned
@@ -67,19 +67,25 @@ This roadmap outlines the phased development plan for `struktur`, tracking compl
 
 ---
 
-## Phase 4: Local Job Application Tracking (SQLite Integration) (In Progress)
+## Phase 4: Local Job Application Tracking (SQLite Integration) (Completed)
 
-* [ ] **Database Schema**:
-  * Define schema for job applications: `company`, `role`, `status` (Saved, Applied, Interviewing, Offer, Rejected), `date_applied`, `salary_range`, `job_url`, `notes`.
-  * Snapshot table storing the exact rendered text and preset parameters used for each application.
-* [ ] **Database Engine (`struktur-core::db` or `struktur-db`)**:
-  * Embedded SQLite management via `rusqlite` or `sqlx`.
-  * Automatic schema migrations on initialization.
-  * Database file stored in XDG data directory (`~/.local/share/struktur/jobs.db`).
-* [ ] **CLI Tracking Commands**:
-  * `struktur job add --company <name> --role <title> [--status <status>]`: Log a new application.
-  * `struktur job list [--status <status>]`: Display active applications and pipeline statuses.
-  * `struktur job update <id> --status <status>`: Advance an application through the pipeline.
+* [x] **Database Schema & Relational Models**:
+  * Strongly typed models for `Job`, `JobStatus`, `JobEvent`, `JobEventType`, and `Rendering`.
+  * Application tracking schema (`jobs`) with fields for company, role, status, application date, location, salary range, job URL, notes, and recruiter contact details.
+  * Timeline event log table (`job_events`) tracking status transitions and audit notes.
+  * Document snapshots table (`renderings`) storing archetype, format, rendered output, preset name, template context JSON, and cascading foreign keys.
+* [x] **Database Engine (`struktur-core::db`)**:
+  * Embedded SQLite management via `rusqlite` with foreign key enforcement (`PRAGMA foreign_keys = ON;`).
+  * Idempotent migration runner (`user_version` pragma with embedded SQL scripts).
+  * Safe transaction management (`within_transaction`) and strongly typed repository methods.
+  * Local storage resolution in XDG data directory (`~/.local/share/struktur/jobs.db`).
+* [x] **CLI Tracking Commands**:
+  * `struktur job add`: Log applications with full metadata; auto-sets `date_applied` when created as `applied`.
+  * `struktur job list [--status <status>]`: Formatted terminal table of tracked applications with optional status filtering.
+  * `struktur job show <id>`: Inspection view displaying job metadata, chronological timeline events, and rendered document snapshots.
+  * `struktur job update <id> <field>`: Granular updates for `company`, `role`, `status`, `location`, `salary`, `url`, `notes`, and `contact`; tracks transition events and touches `updated_at`.
+  * `struktur job rm <id>` (alias: `delete`): Cascading removal of job records and associated history/renderings.
+  * `struktur job generate <id> --preset <preset>`: Generates tailored documents pre-filled from job details and records historical document snapshots in SQLite.
 
 ---
 
