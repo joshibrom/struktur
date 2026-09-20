@@ -168,17 +168,24 @@ pub enum JobCommand {
         #[command(subcommand)]
         target: JobUpdateCommand,
     },
+
+    /// Delete an existing job application record and its associated history.
+    #[command(alias = "delete", about = "Delete an existing job application record.")]
+    Rm {
+        #[arg(help = "Database ID of the job to delete")]
+        job_id: i64,
+    },
 }
 
 /// Command-line arguments for adding a new job application.
 #[derive(clap::Args, Debug)]
 pub struct JobAddArgs {
     /// Target company or organization name.
-    #[arg(long, help = "Target company or organization name")]
+    #[arg(short, long, help = "Target company or organization name")]
     pub company: String,
 
     /// Target job title or role position.
-    #[arg(long, help = "Target job title or role position")]
+    #[arg(short, long, help = "Target job title or role position")]
     pub role: String,
 
     /// Initial application status (defaults to 'saved' if omitted).

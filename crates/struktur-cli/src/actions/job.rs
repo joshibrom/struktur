@@ -324,3 +324,22 @@ pub fn show(job_id: i64) -> ActionResult {
 
     Ok(())
 }
+
+/// Deletes a job application record and its cascaded history by ID.
+///
+/// # Errors
+///
+/// Returns an error if the database cannot be opened, the job does not exist, or the transaction fails.
+pub fn delete(job_id: i64) -> ActionResult {
+    let mut conn = db::open()?;
+    let did_delete =
+        db::actions::within_transaction(&mut conn, |conn| db::actions::delete_job(conn, job_id))?;
+
+    if did_delete {
+        println!("Deleted job [#{job_id}].");
+    } else {
+        anyhow::bail!("Job with ID #{job_id} does not exist.");
+    }
+
+    Ok(())
+}

@@ -84,6 +84,18 @@ pub fn update_job(conn: &rusqlite::Connection, job: &Job) -> ActionResult<()> {
     Ok(())
 }
 
+/// Deletes a job application record by its database ID, cascading to associated events and renderings.
+///
+/// Returns `Ok(true)` if a matching job was deleted, or `Ok(false)` if no job with that ID existed.
+///
+/// # Errors
+///
+/// Returns an error if the database query fails.
+pub fn delete_job(conn: &rusqlite::Connection, job_id: i64) -> ActionResult<bool> {
+    let n_affected = conn.execute("DELETE FROM jobs WHERE id = ?1", params![job_id])?;
+    Ok(n_affected > 0)
+}
+
 pub fn get_job_events(conn: &rusqlite::Connection, job_id: i64) -> ActionResult<Vec<JobEvent>> {
     let mut stmt = conn.prepare(
         "SELECT * FROM job_events
@@ -346,5 +358,39 @@ mod tests {
         // Querying for an unrelated job returns an empty list
         let empty = get_renderings_for_job(&conn, 999).unwrap();
         assert!(empty.is_empty());
+    }
+
+    #[test]
+    fn test_delete_job_cascades() {
+        let conn = setup_test_db();
+        let job = Job::new("Shopify", "Senior Developer");
+        let job_id = insert_job(&conn, &job).unwrap();
+
+        let event = JobEvent::new(job_id, JobEventType::Note, "Spoke with hiring manager");
+        insert_job_event(&conn, &event).unwrap();
+
+        let rendering = Rendering::new(
+            job_id,
+            TemplateArchetype::CoverLetter,
+            "plaintext",
+            "Letter text",
+            serde_json::json!({}),
+        );
+        insert_rendering(&conn, &rendering).unwrap();
+
+        // Verify records exist
+        assert_eq!(get_job_events(&conn, job_id).unwrap().len(), 1);
+        assert_eq!(get_renderings_for_job(&conn, job_id).unwrap().len(), 1);
+
+        // Delete job
+        assert!(delete_job(&conn, job_id).unwrap());
+
+        // Verify job and all cascaded children are deleted
+        assert!(get_job(&conn, job_id).unwrap().is_none());
+        assert!(get_job_events(&conn, job_id).unwrap().is_empty());
+        assert!(get_renderings_for_job(&conn, job_id).unwrap().is_empty());
+
+        // Deleting non-existent job returns false
+        assert!(!delete_job(&conn, job_id).unwrap());
     }
 }

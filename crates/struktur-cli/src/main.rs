@@ -72,6 +72,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
                     actions::job::update_contact(job_id, name, email)
                 }
             },
+            JobCommand::Rm { job_id } => actions::job::delete(job_id),
         },
     }
 }
